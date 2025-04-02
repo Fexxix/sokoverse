@@ -6,6 +6,7 @@ import PixelatedBackground from "@/components/PixelatedBackground"
 import FloatingPixels from "@/components/FloatingPixels"
 import Navbar from "@/components/Navbar"
 import SoundEffect from "@/components/SoundEffect"
+import { Toaster } from "@/components/ui/toaster"
 
 const pressStart2P = Press_Start_2P({
   weight: "400",
@@ -44,6 +45,7 @@ export default function RootLayout({
           </div>
           <SoundEffect />
         </Providers>
+        <Toaster />
       </body>
     </html>
   )

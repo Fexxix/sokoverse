@@ -2,17 +2,35 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useMutation } from "@tanstack/react-query"
-import { initializeGameState, movePlayer, resetLevel, getGameStats, formatTime, type GameState } from "@/lib/game-logic"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import {
+  initializeGameState,
+  movePlayer,
+  resetLevel,
+  getGameStats,
+  formatTime,
+  type GameState,
+} from "@/lib/game-logic"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import SokobanCanvasGameBoard from "./SokobanCanvasGameBoard"
 import { SettingsDialog, type LevelSettings } from "./SettingsDialog"
 import { LevelCompletionDialog } from "./LevelCompletionDialog"
 import { useLocalStorage } from "@/hooks/useLocalStorage"
-import { ToastContainer } from "@/components/ui/toast"
 import { useToast } from "@/hooks/use-toast"
-import { LoadingState, ErrorState, GameControls, GameStats, InitialState } from "./GameStateComponents"
+import {
+  LoadingState,
+  ErrorState,
+  GameControls,
+  GameStats,
+  InitialState,
+} from "./GameStateComponents"
 
 // Default level settings
 const DEFAULT_LEVEL_SETTINGS: LevelSettings = {
@@ -25,15 +43,15 @@ const DEFAULT_LEVEL_SETTINGS: LevelSettings = {
 export default function SokobanGame() {
   const [levelSettings, setLevelSettings] = useLocalStorage<LevelSettings>(
     "sokoverse-level-settings",
-    DEFAULT_LEVEL_SETTINGS,
+    DEFAULT_LEVEL_SETTINGS
   )
-  const [hasSetInitialSettings, setHasSetInitialSettings] = useLocalStorage<boolean>(
-    "sokoverse-has-set-initial-settings",
-    false,
-  )
+  const [hasSetInitialSettings, setHasSetInitialSettings] =
+    useLocalStorage<boolean>("sokoverse-has-set-initial-settings", false)
   const [level, setLevel] = useState<string[]>([])
   const [gameState, setGameState] = useState<GameState | null>(null)
-  const [animationFrame, setAnimationFrame] = useState<"default" | "inbetween">("default")
+  const [animationFrame, setAnimationFrame] = useState<"default" | "inbetween">(
+    "default"
+  )
   const [levelNumber, setLevelNumber] = useState<number>(1)
   const [showSettingsDialog, setShowSettingsDialog] = useState(false)
   const [showCompletionDialog, setShowCompletionDialog] = useState(false)
@@ -41,7 +59,7 @@ export default function SokobanGame() {
   const [error, setError] = useState<Error | null>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const animationTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const { toast, toasts, dismissToast } = useToast()
+  const { toast } = useToast()
 
   // Check if we need to show the settings dialog on first visit
   useEffect(() => {
@@ -78,11 +96,13 @@ export default function SokobanGame() {
     },
     onError: (error) => {
       console.error("Error generating level:", error)
-      setError(error instanceof Error ? error : new Error("An unknown error occurred"))
+      setError(
+        error instanceof Error ? error : new Error("An unknown error occurred")
+      )
       toast({
         title: "Error",
         description: "Failed to generate level. Please try again.",
-        type: "error",
+        variant: "destructive",
       })
     },
   })
@@ -125,7 +145,18 @@ export default function SokobanGame() {
       if (!gameState || showCompletionDialog) return
 
       // Prevent default behavior for arrow keys to avoid scrolling
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d"].includes(e.key)) {
+      if (
+        [
+          "ArrowUp",
+          "ArrowDown",
+          "ArrowLeft",
+          "ArrowRight",
+          "w",
+          "a",
+          "s",
+          "d",
+        ].includes(e.key)
+      ) {
         e.preventDefault()
       }
 
@@ -169,7 +200,9 @@ export default function SokobanGame() {
       }
 
       if (direction) {
-        setGameState((prevState) => (prevState ? movePlayer(prevState, direction!) : null))
+        setGameState((prevState) =>
+          prevState ? movePlayer(prevState, direction!) : null
+        )
 
         // Start animation
         setAnimationFrame("inbetween")
@@ -185,7 +218,7 @@ export default function SokobanGame() {
         }, 100)
       }
     },
-    [gameState, level, showCompletionDialog],
+    [gameState, level, showCompletionDialog]
   )
 
   // Generate a new level
@@ -214,7 +247,7 @@ export default function SokobanGame() {
 
       setShowSettingsDialog(false)
     },
-    [generateLevelMutation, hasInitialized],
+    [generateLevelMutation, hasInitialized]
   )
 
   // Handle level completion and generate next level
@@ -264,25 +297,39 @@ export default function SokobanGame() {
   const stats = gameState ? getGameStats(gameState) : { steps: 0, time: 0 }
 
   // Determine if a level is in progress
-  const isLevelInProgress = gameState ? gameState.steps > 0 && !gameState.isCompleted : false
+  const isLevelInProgress = gameState
+    ? gameState.steps > 0 && !gameState.isCompleted
+    : false
 
   // Loading state
   const isLoading = generateLevelMutation.isPending
 
   // Error state
   if (error) {
-    return <ErrorState levelNumber={levelNumber} errorMessage={error.message} onRetry={generateNewLevel} />
+    return (
+      <ErrorState
+        levelNumber={levelNumber}
+        errorMessage={error.message}
+        onRetry={generateNewLevel}
+      />
+    )
   }
 
   return (
     <div className="flex flex-col items-center">
       {/* Level title */}
       <div className="text-center mb-6">
-        <h1 className="text-4xl font-pixel text-primary">Level {levelNumber}</h1>
+        <h1 className="text-4xl font-pixel text-primary">
+          Level {levelNumber}
+        </h1>
       </div>
 
       {/* Game controls */}
-      <GameControls onReset={resetCurrentLevel} onNewLevel={generateNewLevel} isLoading={isLoading}>
+      <GameControls
+        onReset={resetCurrentLevel}
+        onNewLevel={generateNewLevel}
+        isLoading={isLoading}
+      >
         <SettingsDialog
           currentSettings={levelSettings}
           onApplySettings={handleSettingsChange}
@@ -294,20 +341,28 @@ export default function SokobanGame() {
 
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline" size="icon" className="pixelated-border" aria-label="Game information">
+            <Button
+              variant="outline"
+              size="icon"
+              className="pixelated-border"
+              aria-label="Game information"
+            >
               <Info className="h-5 w-5" />
             </Button>
           </DialogTrigger>
           <DialogContent className="bg-background border-primary">
             <DialogHeader>
-              <DialogTitle className="font-pixel text-primary">Game Controls</DialogTitle>
+              <DialogTitle className="font-pixel text-primary">
+                Game Controls
+              </DialogTitle>
             </DialogHeader>
             <div className="font-mono text-foreground space-y-4">
               <div>
                 <h3 className="font-bold mb-2">Movement</h3>
                 <ul className="list-disc list-inside space-y-1">
                   <li>
-                    <span className="font-bold">WASD</span> or <span className="font-bold">Arrow Keys</span> to move
+                    <span className="font-bold">WASD</span> or{" "}
+                    <span className="font-bold">Arrow Keys</span> to move
                   </li>
                 </ul>
               </div>
@@ -315,10 +370,12 @@ export default function SokobanGame() {
                 <h3 className="font-bold mb-2">Game Controls</h3>
                 <ul className="list-disc list-inside space-y-1">
                   <li>
-                    <span className="font-bold">R</span> to restart the current level
+                    <span className="font-bold">R</span> to restart the current
+                    level
                   </li>
                   <li>
-                    <span className="font-bold">N</span> to generate a new random level
+                    <span className="font-bold">N</span> to generate a new
+                    random level
                   </li>
                 </ul>
               </div>
@@ -370,10 +427,6 @@ export default function SokobanGame() {
         currentSettings={levelSettings}
         isLevelInProgress={isLevelInProgress}
       />
-
-      {/* Toast container for notifications */}
-      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }
-
