@@ -25,7 +25,11 @@ export function PixelConfetti() {
   useEffect(() => {
     // Generate colors based on current theme
     const getColors = () => {
-      const baseColors = ["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--accent))"]
+      const baseColors = [
+        "hsl(var(--primary))",
+        "hsl(var(--secondary))",
+        "hsl(var(--accent))",
+      ]
 
       // Add some variation
       return [
@@ -69,12 +73,8 @@ export function PixelConfetti() {
 
     // Animation loop
     let animationId: number
-    let lastTime = 0
 
-    const animate = (time: number) => {
-      const deltaTime = time - lastTime
-      lastTime = time
-
+    const animate = () => {
       setParticles((prevParticles) => {
         if (prevParticles.length === 0) return prevParticles
 
@@ -92,7 +92,10 @@ export function PixelConfetti() {
                 y: particle.velocity.y + gravity,
               },
               rotation: particle.rotation + particle.rotationSpeed,
-              opacity: particle.y > window.innerHeight * 0.8 ? Math.max(0, particle.opacity - 0.02) : particle.opacity,
+              opacity:
+                particle.y > window.innerHeight * 0.8
+                  ? Math.max(0, particle.opacity - 0.02)
+                  : particle.opacity,
             }
           })
           .filter((particle) => particle.opacity > 0)
@@ -132,4 +135,3 @@ export function PixelConfetti() {
     </div>
   )
 }
-

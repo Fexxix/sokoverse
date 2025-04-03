@@ -6,17 +6,25 @@ const SoundEffect = () => {
   const audioContextRef = useRef<AudioContext | null>(null)
 
   useEffect(() => {
-    audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
+    audioContextRef.current = new (window.AudioContext ??
+      (window as unknown as { webkitAudioContext: typeof AudioContext })
+        .webkitAudioContext)()
 
     const playSound = () => {
       if (audioContextRef.current) {
         const oscillator = audioContextRef.current.createOscillator()
         oscillator.type = "square"
-        oscillator.frequency.setValueAtTime(440, audioContextRef.current.currentTime) // 440 Hz = A4 note
+        oscillator.frequency.setValueAtTime(
+          440,
+          audioContextRef.current.currentTime
+        ) // 440 Hz = A4 note
 
         const gainNode = audioContextRef.current.createGain()
         gainNode.gain.setValueAtTime(0.1, audioContextRef.current.currentTime)
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContextRef.current.currentTime + 0.1)
+        gainNode.gain.exponentialRampToValueAtTime(
+          0.01,
+          audioContextRef.current.currentTime + 0.1
+        )
 
         oscillator.connect(gainNode)
         gainNode.connect(audioContextRef.current.destination)
@@ -38,4 +46,3 @@ const SoundEffect = () => {
 }
 
 export default SoundEffect
-

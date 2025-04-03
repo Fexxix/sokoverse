@@ -15,7 +15,7 @@ interface Pixel {
 
 const FloatingPixels: React.FC = () => {
   const [pixels, setPixels] = useState<Pixel[]>([])
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+  const [_, setDimensions] = useState({ width: 0, height: 0 })
   const pathname = usePathname()
 
   // Determine if we're on a game page

@@ -16,11 +16,10 @@ export default function ExpertGauntletPage() {
             rel="noopener noreferrer"
             className="underline hover:text-primary"
           >
-            Linus Åkesson's AutoSokoban
+            Linus Åkesson&apos;s AutoSokoban
           </Link>
         </p>
       </div>
     </div>
   )
 }
-

@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     try {
       const response = await fetch(
         `https://www.linusakesson.net/games/autosokoban/board.php?v=1&seed=${seed}&level=${level}`,
-        // @ts-ignore
+        // @ts-expect-error This only errors in ci and is just a type error
         { next: { revalidate: 0 } } // Ensure fresh data
       )
 

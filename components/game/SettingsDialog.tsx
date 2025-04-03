@@ -305,8 +305,8 @@ export function SettingsDialog({
               Settings!
             </AlertDialogTitle>
             <AlertDialogDescription className="font-mono space-y-2">
-              You've made some awesome changes to your puzzle settings, but
-              haven't saved them yet!
+              You&apos;ve made some awesome changes to your puzzle settings, but
+              haven&apos;t saved them yet!
               <span className="block text-yellow-500 font-bold mt-2">
                 What would you like to do with these pixel-perfect adjustments?
               </span>
