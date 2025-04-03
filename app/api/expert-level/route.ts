@@ -20,7 +20,10 @@ export async function GET(request: NextRequest) {
   const level = searchParams.get("level")
 
   if (!seed || !level) {
-    return NextResponse.json({ error: "Missing required parameters: seed and level" }, { status: 400 })
+    return NextResponse.json(
+      { error: "Missing required parameters: seed and level" },
+      { status: 400 }
+    )
   }
 
   let retries = 0
@@ -30,13 +33,17 @@ export async function GET(request: NextRequest) {
     try {
       const response = await fetch(
         `https://www.linusakesson.net/games/autosokoban/board.php?v=1&seed=${seed}&level=${level}`,
-        { next: { revalidate: 0 } }, // Ensure fresh data
+        // @ts-ignore
+        { next: { revalidate: 0 } } // Ensure fresh data
       )
 
       // If the server returns an error, don't retry
       if (!response.ok) {
         const errorMessage = `Server error: ${response.status}`
-        return NextResponse.json({ error: errorMessage, isServerError: true }, { status: response.status })
+        return NextResponse.json(
+          { error: errorMessage, isServerError: true },
+          { status: response.status }
+        )
       }
 
       const text = await response.text()
@@ -48,7 +55,9 @@ export async function GET(request: NextRequest) {
       retries++
 
       // Wait a bit before retrying (exponential backoff)
-      await new Promise((resolve) => setTimeout(resolve, 500 * Math.pow(2, retries)))
+      await new Promise((resolve) =>
+        setTimeout(resolve, 500 * Math.pow(2, retries))
+      )
     }
   }
 
@@ -58,7 +67,7 @@ export async function GET(request: NextRequest) {
       error: `Failed after ${MAX_RETRIES} attempts: ${lastError?.message}`,
       isServerError: false,
     },
-    { status: 500 },
+    { status: 500 }
   )
 }
 
@@ -78,7 +87,9 @@ function parseAutoSokobanResponse(xmlResponse: string): string[] {
   const dealString = dealMatch[1]
 
   // Convert the deal string to Boxoban format
-  const boxobanChars = dealString.split("").map((char) => characterMapping[char] || char)
+  const boxobanChars = dealString
+    .split("")
+    .map((char) => characterMapping[char] || char)
 
   // Split into rows (18x12 grid)
   const rows: string[] = []
@@ -92,4 +103,3 @@ function parseAutoSokobanResponse(xmlResponse: string): string[] {
 
   return rows
 }
-
