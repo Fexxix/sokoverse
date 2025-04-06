@@ -1,21 +1,23 @@
 "use client"
 
-import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeProvider } from "@/contexts/theme-provider"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { AuthProvider, type AuthContextType } from "@/contexts/auth"
 import type { ReactNode } from "react"
 
 interface ProvidersProps {
   children: ReactNode
   themes?: string[]
   defaultTheme?: string
+  initialAuthState: AuthContextType
 }
 
 export default function Providers({
   children,
   themes = ["green", "blue", "purple", "monochrome"],
   defaultTheme = "green",
+  initialAuthState,
 }: ProvidersProps) {
-  // Create a client
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -28,10 +30,16 @@ export default function Providers({
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme={defaultTheme} enableSystem={false} themes={themes}>
-        {children}
-      </ThemeProvider>
+      <AuthProvider initialState={initialAuthState}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme={defaultTheme}
+          enableSystem={false}
+          themes={themes}
+        >
+          {children}
+        </ThemeProvider>
+      </AuthProvider>
     </QueryClientProvider>
   )
 }
-

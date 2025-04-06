@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,6 +14,8 @@ import {
 import { Infinity, Trophy, Pencil, Lock } from "lucide-react"
 import Link from "next/link"
 import AuthDialog from "./AuthDialog"
+import { useAuth } from "@/contexts/auth"
+import { redirect } from "next/navigation"
 
 interface ModeButtonProps {
   title: string
@@ -35,6 +36,8 @@ const ModeButton: React.FC<ModeButtonProps> = ({
 }) => {
   const [open, setOpen] = useState(false)
   const [showAuthDialog, setShowAuthDialog] = useState(false)
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false)
+  const { isAuthenticated, user } = useAuth()
 
   const IconComponent = () => {
     switch (icon) {
@@ -50,9 +53,20 @@ const ModeButton: React.FC<ModeButtonProps> = ({
   }
 
   const handlePlay = () => {
-    if (requiresAuth) {
+    if (!isAuthenticated) {
       setOpen(false)
       setShowAuthDialog(true)
+      return
+    }
+
+    if (user?.isAnonymous && requiresAuth) {
+      setOpen(false)
+      setShowUpgradeDialog(true)
+      return
+    }
+
+    if (!requiresAuth || !user?.isAnonymous) {
+      redirect(href)
     }
   }
 
@@ -65,17 +79,21 @@ const ModeButton: React.FC<ModeButtonProps> = ({
       >
         <IconComponent />
         <span className="font-pixel text-lg mb-2">
-          {title} {requiresAuth && <Lock className="inline-block w-4 h-4 ml-1" />}
+          {title}{" "}
+          {requiresAuth && <Lock className="inline-block w-4 h-4 ml-1" />}
         </span>
         <span className="font-mono text-sm text-center opacity-80 font-medium leading-relaxed">
           {description.split(" ").slice(0, 5).join(" ")}...
         </span>
       </Button>
 
+      {/* Mode Info Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="bg-background border-primary">
           <DialogHeader>
-            <DialogTitle className="font-pixel text-primary">{title}</DialogTitle>
+            <DialogTitle className="font-pixel text-primary">
+              {title}
+            </DialogTitle>
           </DialogHeader>
           <DialogDescription className="text-foreground/90 font-mono text-base font-medium leading-relaxed">
             {description}
@@ -86,28 +104,54 @@ const ModeButton: React.FC<ModeButtonProps> = ({
             {requiresAuth && (
               <div className="mt-2 text-xs font-mono text-primary/80">
                 <Lock className="inline-block w-3 h-3 mr-1" />
-                This mode requires authentication to save and share your creations.
+                This mode requires a Google account to save and share your
+                creations.
               </div>
             )}
           </div>
           <DialogFooter>
-            {requiresAuth ? (
-              <Button onClick={handlePlay} className="font-pixel">
-                PLAY
-              </Button>
-            ) : (
-              <Button asChild className="font-pixel">
-                <Link href={href}>PLAY</Link>
-              </Button>
-            )}
+            <Button onClick={handlePlay} className="font-pixel">
+              PLAY
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <AuthDialog open={showAuthDialog} onOpenChange={setShowAuthDialog} redirectPath={href} />
+      {/* Auth Dialog for non-authenticated users */}
+      <AuthDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        redirectPath={href}
+      />
+
+      {/* Upgrade Account Dialog for anonymous users trying to access restricted modes */}
+      <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+        <DialogContent className="bg-background border-primary">
+          <DialogHeader>
+            <DialogTitle className="font-pixel text-primary">
+              Upgrade Your Account
+            </DialogTitle>
+          </DialogHeader>
+          <DialogDescription className="text-foreground/90 font-mono text-base font-medium leading-relaxed">
+            To access the Sokoban Architect and save your custom levels, you'll
+            need to upgrade to a full account. Don't worry - all your current
+            progress will be preserved!
+          </DialogDescription>
+          <div className="my-4 p-4 bg-primary/10 rounded-md border border-primary/30">
+            <p className="text-sm font-mono font-medium">
+              Sign in with Google to unlock all features and keep your progress
+              forever!
+            </p>
+          </div>
+          <DialogFooter>
+            <Button asChild className="font-pixel">
+              <Link href="/login/google">SIGN IN WITH GOOGLE</Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
 
 export default ModeButton
-

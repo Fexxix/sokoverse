@@ -7,6 +7,7 @@ import FloatingPixels from "@/components/FloatingPixels"
 import Navbar from "@/components/Navbar"
 import SoundEffect from "@/components/SoundEffect"
 import { Toaster } from "@/components/ui/toaster"
+import { getCurrentSession } from "@/lib/server/auth/session"
 
 const pressStart2P = Press_Start_2P({
   weight: "400",
@@ -26,17 +27,23 @@ export const metadata = {
   generator: "v0.dev",
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const session = await getCurrentSession()
+  const initialAuthState = {
+    user: session?.user ?? null,
+    isAuthenticated: !!session?.user,
+  }
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${pressStart2P.variable} ${vt323.variable} font-sans bg-background text-foreground`}
       >
-        <Providers>
+        <Providers initialAuthState={initialAuthState}>
           <PixelatedBackground />
           <FloatingPixels />
           <div className="max-w-5xl mx-auto px-4">
