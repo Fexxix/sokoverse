@@ -48,6 +48,7 @@ export async function GET(request: Request): Promise<Response> {
   try {
     tokens = await google.validateAuthorizationCode(code, codeVerifier)
   } catch (e) {
+    console.error(e)
     return new Response(null, {
       status: 400,
     })

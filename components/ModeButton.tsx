@@ -133,9 +133,9 @@ const ModeButton: React.FC<ModeButtonProps> = ({
             </DialogTitle>
           </DialogHeader>
           <DialogDescription className="text-foreground/90 font-mono text-base font-medium leading-relaxed">
-            To access the Sokoban Architect and save your custom levels, you'll
-            need to upgrade to a full account. Don't worry - all your current
-            progress will be preserved!
+            To access the Sokoban Architect and save your custom levels,
+            you&spos;ll need to upgrade to a full account. Don&apos;t worry -
+            all your current progress will be preserved!
           </DialogDescription>
           <div className="my-4 p-4 bg-primary/10 rounded-md border border-primary/30">
             <p className="text-sm font-mono font-medium">

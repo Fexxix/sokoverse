@@ -9,7 +9,6 @@ import {
 import { sha256 } from "@oslojs/crypto/sha2"
 import { cookies } from "next/headers"
 import { cache } from "react"
-import { redirect } from "next/navigation"
 
 /**
  * Generates a random session token.

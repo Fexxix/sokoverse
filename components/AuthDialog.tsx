@@ -4,7 +4,6 @@ import type React from "react"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -45,7 +44,7 @@ const AuthDialog: React.FC<AuthDialogProps> = ({ open, onOpenChange }) => {
 
       onOpenChange(false)
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to sign in as guest",
@@ -69,7 +68,9 @@ const AuthDialog: React.FC<AuthDialogProps> = ({ open, onOpenChange }) => {
           <div className="text-center font-mono text-sm text-primary/70 space-y-2">
             <p>🎭 Psst! Choose your adventure wisely, brave pixel pusher!</p>
             <p>🚀 Both options are as smooth as butter on a hot pixel!</p>
-            <p>⏳ Guest progress saved for 48 hours (it's magic, we swear!)</p>
+            <p>
+              ⏳ Guest progress saved for 48 hours (it&spos;s magic, we swear!)
+            </p>
             <p>
               🚨 But beware! If you log out, your progress vanishes into the
               digital void!
