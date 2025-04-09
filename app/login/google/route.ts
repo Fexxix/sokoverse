@@ -10,6 +10,8 @@ export async function GET(): Promise<Response> {
     "profile",
   ])
 
+  url.searchParams.set("prompt", "select_account")
+
   const cookieStore = await cookies()
   cookieStore.set("google_oauth_state", state, {
     path: "/",
