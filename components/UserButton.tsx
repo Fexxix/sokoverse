@@ -59,17 +59,16 @@ export function UserButton() {
           disabled={isSigningOut}
         >
           <Avatar className="h-8 w-8">
-            {user?.pictureURL ? (
+            {user?.pictureURL && (
               <AvatarImage src={user.pictureURL} alt={user.name || "User"} />
-            ) : (
-              <AvatarFallback className="bg-primary/10">
-                {isSigningOut ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <User className="h-4 w-4" />
-                )}
-              </AvatarFallback>
             )}
+            <AvatarFallback className="bg-primary/10">
+              {isSigningOut ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <User className="h-4 w-4" />
+              )}
+            </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
