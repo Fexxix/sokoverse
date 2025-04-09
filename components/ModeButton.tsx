@@ -15,7 +15,7 @@ import { Infinity, Trophy, Pencil, Lock } from "lucide-react"
 import Link from "next/link"
 import AuthDialog from "./AuthDialog"
 import { useAuth } from "@/contexts/auth"
-import { redirect } from "next/navigation"
+import { useRouter } from "nextjs-toploader/app"
 
 interface ModeButtonProps {
   title: string
@@ -38,6 +38,7 @@ const ModeButton: React.FC<ModeButtonProps> = ({
   const [showAuthDialog, setShowAuthDialog] = useState(false)
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false)
   const { isAuthenticated, user } = useAuth()
+  const router = useRouter()
 
   const IconComponent = () => {
     switch (icon) {
@@ -66,7 +67,7 @@ const ModeButton: React.FC<ModeButtonProps> = ({
     }
 
     if (!requiresAuth || !user?.isAnonymous) {
-      redirect(href)
+      router.push(href)
     }
   }
 
