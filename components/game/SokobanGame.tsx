@@ -38,16 +38,17 @@ const DEFAULT_LEVEL_SETTINGS: LevelSettings = {
   height: 9,
   boxes: 3,
   minWalls: 13,
+  category: "balanced",
 }
 
 export default function SokobanGame() {
-  const [levelSettings, setLevelSettings] = useLocalStorage<LevelSettings>(
-    "sokoverse-level-settings",
-    DEFAULT_LEVEL_SETTINGS
-  )
+  const [storedlevelSettings, setStoredLevelSettings] =
+    useLocalStorage<LevelSettings>(
+      "sokoverse-level-settings",
+      DEFAULT_LEVEL_SETTINGS
+    )
   const [hasSetInitialSettings, setHasSetInitialSettings] =
     useLocalStorage<boolean>("sokoverse-has-set-initial-settings", false)
-  const [level, setLevel] = useState<string[]>([])
   const [gameState, setGameState] = useState<GameState | null>(null)
   const [animationFrame, setAnimationFrame] = useState<"default" | "inbetween">(
     "default"
@@ -55,16 +56,9 @@ export default function SokobanGame() {
   const [levelNumber, setLevelNumber] = useState<number>(1)
   const [showSettingsDialog, setShowSettingsDialog] = useState(false)
   const [showCompletionDialog, setShowCompletionDialog] = useState(false)
-  const [hasInitialized, setHasInitialized] = useState(false)
-  const [error, setError] = useState<Error | null>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const animationTimerRef = useRef<NodeJS.Timeout | null>(null)
   const { toast } = useToast()
-
-  // Check if we need to show the settings dialog on first visit
-  useEffect(() => {
-    setShowSettingsDialog(!hasSetInitialSettings)
-  }, [hasSetInitialSettings])
 
   // Mutation for generating a level via API
   const generateLevelMutation = useMutation({
@@ -85,20 +79,11 @@ export default function SokobanGame() {
     },
     onSuccess: (data) => {
       if (data && data.level) {
-        setLevel(data.level)
         setGameState(initializeGameState(data.level))
-        setError(null)
-        // Only increment level number if the previous level was completed or this is the first level
-        if (!hasInitialized) {
-          setHasInitialized(true)
-        }
       }
     },
     onError: (error) => {
       console.error("Error generating level:", error)
-      setError(
-        error instanceof Error ? error : new Error("An unknown error occurred")
-      )
       toast({
         title: "Error",
         description: "Failed to generate level. Please try again.",
@@ -107,25 +92,11 @@ export default function SokobanGame() {
     },
   })
 
-  // Initialize the game when settings dialog is closed or a preset is selected
-  useEffect(() => {
-    // If the settings dialog was shown for initial setup and is now closed
-    if (!showSettingsDialog && !hasInitialized) {
-      // If the user hasn't explicitly set settings, use the default
-      if (!hasSetInitialSettings) {
-        setHasSetInitialSettings(true)
-        setLevelSettings(DEFAULT_LEVEL_SETTINGS)
-      }
-      generateNewLevel()
-    }
-  }, [showSettingsDialog, hasSetInitialSettings, hasInitialized])
+  const hasInitialized = !!gameState
 
-  // Generate a level on first load if settings are already set
   useEffect(() => {
-    if (hasSetInitialSettings && !hasInitialized && !showSettingsDialog) {
-      generateNewLevel()
-    }
-  }, [])
+    if (!hasInitialized) generateNewLevel()
+  }, [hasInitialized])
 
   // Check for level completion
   useEffect(() => {
@@ -188,10 +159,7 @@ export default function SokobanGame() {
         case "r":
         case "R":
           // Reset the level
-          if (level.length > 0) {
-            setGameState(resetLevel(level))
-          }
-          return
+          return resetCurrentLevel()
         case "n":
         case "N":
           // Generate a new level
@@ -218,37 +186,21 @@ export default function SokobanGame() {
         }, 100)
       }
     },
-    [gameState, level, showCompletionDialog]
+    [gameState, showCompletionDialog]
   )
 
   // Generate a new level
   const generateNewLevel = useCallback(() => {
     setGameState(null)
-    generateLevelMutation.mutate(levelSettings)
-  }, [levelSettings, generateLevelMutation])
+    generateLevelMutation.mutate(storedlevelSettings)
+  }, [storedlevelSettings, generateLevelMutation])
 
   // Reset current level
   const resetCurrentLevel = useCallback(() => {
-    if (level.length > 0) {
-      setGameState(resetLevel(level))
+    if (generateLevelMutation.data && generateLevelMutation.data.level) {
+      setGameState(resetLevel(generateLevelMutation.data.level))
     }
-  }, [level])
-
-  // Handle settings change
-  const handleSettingsChange = useCallback(
-    (newSettings: LevelSettings) => {
-      setLevelSettings(newSettings)
-      setHasSetInitialSettings(true)
-
-      // Generate a new level with the updated settings if this is the initial setup
-      if (!hasInitialized) {
-        generateLevelMutation.mutate(newSettings)
-      }
-
-      setShowSettingsDialog(false)
-    },
-    [generateLevelMutation, hasInitialized]
-  )
+  }, [generateLevelMutation.data?.level])
 
   // Handle level completion and generate next level
   const handleNextLevel = useCallback(() => {
@@ -296,24 +248,38 @@ export default function SokobanGame() {
   // Get game stats
   const stats = gameState ? getGameStats(gameState) : { steps: 0, time: 0 }
 
-  // Determine if a level is in progress
-  const isLevelInProgress = gameState
-    ? gameState.steps > 0 && !gameState.isCompleted
-    : false
-
   // Loading state
   const isLoading = generateLevelMutation.isPending
 
   // Error state
-  if (error) {
+  if (generateLevelMutation.error) {
     return (
       <ErrorState
         levelNumber={levelNumber}
-        errorMessage={error.message}
+        errorMessage={
+          generateLevelMutation.error instanceof Error
+            ? generateLevelMutation.error.message
+            : "An unknown error occurred"
+        }
         onRetry={generateNewLevel}
       />
     )
   }
+
+  const settingsDialog = (
+    <SettingsDialog
+      generateNewLevel={generateNewLevel}
+      hasSetInitialSettings={hasSetInitialSettings}
+      storedlevelSettings={storedlevelSettings}
+      setHasSetInitialSettings={setHasSetInitialSettings}
+      setStoredLevelSettings={setStoredLevelSettings}
+      isLoading={isLoading}
+      showSettingsDialog={showSettingsDialog}
+      setShowSettingsDialog={setShowSettingsDialog}
+      // TODO: refactor this later
+      fromCompletionDialog={gameState?.isCompleted && showCompletionDialog}
+    />
+  )
 
   return (
     <div className="flex flex-col items-center">
@@ -330,14 +296,7 @@ export default function SokobanGame() {
         onNewLevel={generateNewLevel}
         isLoading={isLoading}
       >
-        <SettingsDialog
-          currentSettings={levelSettings}
-          onApplySettings={handleSettingsChange}
-          isLevelInProgress={isLevelInProgress}
-          isLoading={isLoading}
-          defaultOpen={showSettingsDialog}
-          onOpenChange={setShowSettingsDialog}
-        />
+        {settingsDialog}
 
         <Dialog>
           <DialogTrigger asChild>
@@ -398,18 +357,20 @@ export default function SokobanGame() {
 
       {/* Game grid */}
       <div className="bg-background/80 p-4 rounded-lg">
-        {isLoading ? (
-          <LoadingState message="Generating level..." />
-        ) : !hasInitialized ? (
-          <InitialState />
-        ) : gameState ? (
+        {gameState ? (
           <SokobanCanvasGameBoard
             grid={gameState.grid}
             movementDirection={gameState.movementDirection}
             animationFrame={animationFrame}
           />
         ) : (
-          <InitialState />
+          <LoadingState
+            message={
+              generateLevelMutation.isPending
+                ? "Generating level..."
+                : "Loading..."
+            }
+          />
         )}
       </div>
 
@@ -418,14 +379,12 @@ export default function SokobanGame() {
         isOpen={showCompletionDialog}
         onNextLevel={handleNextLevel}
         onReplayLevel={handleReplayLevel}
-        onChangeSettings={handleSettingsChange}
         stats={{
           steps: stats.steps,
           time: formatTime(stats.time),
         }}
         mode="endless"
-        currentSettings={levelSettings}
-        isLevelInProgress={isLevelInProgress}
+        settingsDialog={settingsDialog}
       />
     </div>
   )

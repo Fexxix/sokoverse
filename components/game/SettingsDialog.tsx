@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Settings, Save, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -25,7 +25,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 
 // Level presets with performance indicators
-const PRESET_LEVELS = {
+export const PRESET_LEVELS = {
   casual: {
     width: 7,
     height: 7,
@@ -45,8 +45,8 @@ const PRESET_LEVELS = {
     performance: "Speedy Generation 🚀",
   },
   challenging: {
-    width: 10,
-    height: 10,
+    width: 9,
+    height: 12,
     boxes: 3,
     minWalls: 15,
     label: "Brain Bender",
@@ -54,7 +54,7 @@ const PRESET_LEVELS = {
     performance: "Brief Pause ⏱️",
   },
   extended: {
-    width: 9,
+    width: 12,
     height: 12,
     boxes: 3,
     minWalls: 12,
@@ -62,96 +62,74 @@ const PRESET_LEVELS = {
     description: "Larger playing field with more room to maneuver",
     performance: "Worth the Wait 🧠",
   },
-}
+} as const
 
 export type LevelSettings = {
   width: number
   height: number
   boxes: number
   minWalls: number
+  category: keyof typeof PRESET_LEVELS
 }
 
 interface SettingsDialogProps {
-  currentSettings: LevelSettings
-  onApplySettings: (settings: LevelSettings) => void
-  isLevelInProgress: boolean
   isLoading?: boolean
-  defaultOpen?: boolean
-  onOpenChange?: (open: boolean) => void
   fromCompletionDialog?: boolean
+  showSettingsDialog: boolean
+  setShowSettingsDialog: (open: boolean) => void
+  hasSetInitialSettings: boolean
+  setHasSetInitialSettings: (hasSetInitialSettings: boolean) => void
+  storedlevelSettings: LevelSettings
+  setStoredLevelSettings: (levelSettings: LevelSettings) => void
+  generateNewLevel: () => void
 }
 
 export function SettingsDialog({
-  currentSettings,
-  onApplySettings,
-  isLevelInProgress,
   isLoading = false,
-  defaultOpen = false,
-  onOpenChange,
   fromCompletionDialog = false,
+  showSettingsDialog,
+  setShowSettingsDialog,
+  hasSetInitialSettings,
+  setHasSetInitialSettings,
+  storedlevelSettings,
+  setStoredLevelSettings,
+  generateNewLevel,
 }: SettingsDialogProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(defaultOpen)
   const [showUnsavedChangesAlert, setShowUnsavedChangesAlert] = useState(false)
   const [selectedSettings, setSelectedSettings] =
-    useState<LevelSettings>(currentSettings)
+    useState<LevelSettings>(storedlevelSettings)
   const [hasChanges, setHasChanges] = useState(false)
-  const [attemptedClose, setAttemptedClose] = useState(false)
   const { toast } = useToast()
 
+  const currentPreset = selectedSettings.category
+
+  const isDefaultPreset = currentPreset === "balanced"
+  const firstVisit = !hasSetInitialSettings && isDefaultPreset
+
   useEffect(() => {
-    // Reset selected settings when dialog opens
-    if (isDialogOpen) {
-      setSelectedSettings(currentSettings)
-      setHasChanges(false)
+    // Show settings dialog if settings haven't been set yet (first visit)
+    if (firstVisit) {
+      return setShowSettingsDialog(true)
     }
-  }, [isDialogOpen, currentSettings])
+  }, [firstVisit, setShowSettingsDialog])
 
   const handleDialogOpenChange = (open: boolean) => {
+    // If this is the first visit and no settings have been selected, don't allow closing the dialog
+    if (firstVisit && !open) return
+
     // If trying to close with unsaved changes
-    if (!open && hasChanges && !attemptedClose) {
-      setAttemptedClose(true)
+    if (!open && hasChanges) {
       setShowUnsavedChangesAlert(true)
       return // Don't close the dialog yet
     }
-
-    // If this is the initial settings dialog (first visit) and it's being closed
-    if (!open && defaultOpen && !fromCompletionDialog && !hasChanges) {
-      // Apply the current settings without showing confirmation
-      applySettings(currentSettings)
-    }
-    // If closing without saving changes (after alert dialog interaction)
-    else if (!open && attemptedClose) {
-      setAttemptedClose(false)
-      setIsDialogOpen(false)
-      if (onOpenChange) {
-        onOpenChange(false)
-      }
-    }
     // Normal open/close behavior
     else {
-      setIsDialogOpen(open)
-      if (onOpenChange) {
-        onOpenChange(open)
-      }
+      setShowSettingsDialog(open)
     }
-  }
-
-  // Find which preset matches current settings, if any
-  const getCurrentPreset = (settings: LevelSettings) => {
-    const presetEntries = Object.entries(PRESET_LEVELS)
-    const currentPreset = presetEntries.find(
-      ([_, preset]) =>
-        preset.width === settings.width &&
-        preset.height === settings.height &&
-        preset.boxes === settings.boxes &&
-        preset.minWalls === settings.minWalls
-    )
-    return currentPreset ? currentPreset[0] : null
   }
 
   const handlePresetSelect = (presetKey: keyof typeof PRESET_LEVELS) => {
     const newSettings = PRESET_LEVELS[presetKey]
-    const currentPreset = getCurrentPreset(selectedSettings)
 
     // If this is already the current preset, do nothing
     if (currentPreset === presetKey) {
@@ -164,6 +142,7 @@ export function SettingsDialog({
       height: newSettings.height,
       boxes: newSettings.boxes,
       minWalls: newSettings.minWalls,
+      category: presetKey,
     })
     setHasChanges(true)
   }
@@ -173,14 +152,13 @@ export function SettingsDialog({
   }
 
   const applySettings = (settings: LevelSettings) => {
-    onApplySettings(settings)
-    setIsDialogOpen(false)
+    setStoredLevelSettings(settings)
+    if (!hasSetInitialSettings) setHasSetInitialSettings(true)
+    setShowSettingsDialog(false)
     setHasChanges(false)
-    setAttemptedClose(false)
 
-    if (onOpenChange) {
-      onOpenChange(false)
-    }
+    // If this is the first visit and settings have been selected, generate a new level
+    if (firstVisit) generateNewLevel()
 
     if (fromCompletionDialog) {
       toast({
@@ -192,26 +170,19 @@ export function SettingsDialog({
 
   const handleDiscardChanges = () => {
     setShowUnsavedChangesAlert(false)
-    setSelectedSettings(currentSettings)
+    setSelectedSettings(storedlevelSettings)
     setHasChanges(false)
-    setIsDialogOpen(false)
-    if (onOpenChange) {
-      onOpenChange(false)
-    }
+    setShowSettingsDialog(false)
   }
 
   const handleSaveUnsavedChanges = () => {
+    applySettings(selectedSettings)
     setShowUnsavedChangesAlert(false)
-    if (!isLevelInProgress && fromCompletionDialog) {
-      applySettings(selectedSettings)
-    }
   }
-
-  const currentPreset = getCurrentPreset(selectedSettings)
 
   return (
     <>
-      <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
+      <Dialog open={showSettingsDialog} onOpenChange={handleDialogOpenChange}>
         <DialogTrigger asChild>
           <Button
             variant="outline"
@@ -223,7 +194,10 @@ export function SettingsDialog({
             <Settings className="h-5 w-5" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="bg-background border-primary my-4">
+        <DialogContent
+          className="bg-background border-primary my-4"
+          hideCloseButton={firstVisit}
+        >
           <DialogHeader>
             <DialogTitle className="font-pixel text-primary">
               Puzzle Settings
@@ -238,7 +212,7 @@ export function SettingsDialog({
               {Object.entries(PRESET_LEVELS).map(([key, preset]) => (
                 <div
                   key={key}
-                  className={`p-4 rounded-md border ${
+                  className={`p-4 transition-colors rounded-md border ${
                     currentPreset === key
                       ? "border-primary bg-primary/10"
                       : "border-border hover:border-primary/50"
@@ -266,14 +240,14 @@ export function SettingsDialog({
                     }
                     disabled={isLoading}
                   >
-                    {currentPreset === key ? "CURRENT SETTING" : "SELECT"}
+                    {currentPreset === key ? "CURRENT" : "SELECT"}
                   </Button>
                 </div>
               ))}
             </div>
 
             <div className="bg-secondary/20 p-4 rounded-md">
-              <p className="text-xs font-mono">
+              <p className="font-mono">
                 These presets are carefully tuned based on analysis of 1.7
                 million Sokoban solutions to ensure engaging puzzles with high
                 solve rates.
@@ -281,13 +255,14 @@ export function SettingsDialog({
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="sticky -bottom-6 p-2 bg-background">
             <Button
               onClick={handleSaveSettings}
-              disabled={!hasChanges || isLoading}
+              disabled={firstVisit ? false : !hasChanges}
               className="font-pixel pixelated-border flex items-center"
             >
-              <Save className="mr-2 h-4 w-4" /> Save Settings
+              <Save className="h-4 w-4" />{" "}
+              {firstVisit ? "Go with Default" : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -298,7 +273,7 @@ export function SettingsDialog({
         open={showUnsavedChangesAlert}
         onOpenChange={setShowUnsavedChangesAlert}
       >
-        <AlertDialogContent className="bg-background border-primary max-w-md overflow-hidden">
+        <AlertDialogContent className="bg-background border-primary">
           <AlertDialogHeader>
             <AlertDialogTitle className="font-pixel text-primary flex items-center">
               <AlertTriangle className="h-5 w-5 mr-2 text-yellow-500" /> Unsaved
@@ -312,19 +287,19 @@ export function SettingsDialog({
               </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-col sm:flex-row gap-2">
+          <AlertDialogFooter className="flex sm:flex-col justify-center gap-2">
+            <AlertDialogAction
+              className="font-pixel pixelated-border bg-primary text-primary-foreground w-full m-[0px_!important]"
+              onClick={handleSaveUnsavedChanges}
+            >
+              Save changes, pwease!
+            </AlertDialogAction>
             <AlertDialogCancel
-              className="font-pixel pixelated-border bg-muted hover:bg-muted/80 w-full"
+              className="font-pixel pixelated-border bg-muted hover:bg-muted/80 w-full m-[0px_!important]"
               onClick={handleDiscardChanges}
             >
               It is what it is
             </AlertDialogCancel>
-            <AlertDialogAction
-              className="font-pixel pixelated-border bg-primary text-primary-foreground w-full"
-              onClick={handleSaveUnsavedChanges}
-            >
-              Save my changes, pwease!
-            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
