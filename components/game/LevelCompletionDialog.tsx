@@ -52,8 +52,6 @@ export function LevelCompletionDialog({
     }
   }, [isOpen, onClose])
 
-  console.log({ settingsDialog })
-
   return (
     <>
       {isOpen && <PixelConfetti />}
