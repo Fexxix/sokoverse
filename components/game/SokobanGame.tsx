@@ -94,8 +94,10 @@ export default function SokobanGame() {
   const hasInitialized = !!gameState
 
   useEffect(() => {
-    if (!hasInitialized) generateNewLevel()
-  }, [hasInitialized])
+    if (!hasInitialized && hasSetInitialSettings) {
+      generateNewLevel()
+    }
+  }, [])
 
   // Check for level completion
   useEffect(() => {
