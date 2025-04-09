@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Settings, ArrowRight, RotateCcw } from "lucide-react"
+import { ArrowRight, RotateCcw } from "lucide-react"
 import { PixelConfetti } from "./PixelConfetti"
 
 interface LevelCompletionDialogProps {
@@ -22,7 +22,7 @@ interface LevelCompletionDialogProps {
     time: string
   }
   mode: "endless" | "expert"
-  settingsDialog: JSX.Element
+  settingsDialog?: JSX.Element
 }
 
 export function LevelCompletionDialog({
@@ -51,6 +51,8 @@ export function LevelCompletionDialog({
       window.removeEventListener("keydown", handleKeyDown)
     }
   }, [isOpen, onClose])
+
+  console.log({ settingsDialog })
 
   return (
     <>

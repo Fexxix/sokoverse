@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar"
 import SoundEffect from "@/components/SoundEffect"
 import { Toaster } from "@/components/ui/toaster"
 import { getCurrentSession } from "@/lib/server/auth/session"
+import NextTopLoader from "nextjs-toploader"
 
 const pressStart2P = Press_Start_2P({
   weight: "400",
@@ -43,6 +44,7 @@ export default async function RootLayout({
       <body
         className={`${pressStart2P.variable} ${vt323.variable} font-sans bg-background text-foreground`}
       >
+        <NextTopLoader showSpinner={false} />
         <Providers initialAuthState={initialAuthState}>
           <PixelatedBackground />
           <FloatingPixels />

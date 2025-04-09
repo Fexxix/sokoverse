@@ -4,7 +4,6 @@ import { ThemeProvider } from "@/contexts/theme-provider"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { AuthProvider, type AuthContextType } from "@/contexts/auth"
 import type { ReactNode } from "react"
-import ThemeifiedTopLoader from "@/components/ThemeifiedTopLoader"
 
 interface ProvidersProps {
   children: ReactNode
@@ -38,7 +37,6 @@ export default function Providers({
           enableSystem={false}
           themes={themes}
         >
-          <ThemeifiedTopLoader />
           {children}
         </ThemeProvider>
       </AuthProvider>

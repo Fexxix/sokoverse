@@ -29,7 +29,6 @@ import {
   ErrorState,
   GameControls,
   GameStats,
-  InitialState,
 } from "./GameStateComponents"
 
 // Default level settings

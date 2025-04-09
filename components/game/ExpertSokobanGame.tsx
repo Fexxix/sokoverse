@@ -2,18 +2,42 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { fetchAutoSokobanLevel, getOrCreateSessionSeed } from "@/lib/auto-sokoban"
-import { initializeGameState, movePlayer, resetLevel, getGameStats, formatTime, type GameState } from "@/lib/game-logic"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import {
+  fetchAutoSokobanLevel,
+  getOrCreateSessionSeed,
+} from "@/lib/auto-sokoban"
+import {
+  initializeGameState,
+  movePlayer,
+  resetLevel,
+  getGameStats,
+  formatTime,
+  type GameState,
+} from "@/lib/game-logic"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Info } from "lucide-react"
 import SokobanCanvasGameBoard from "./SokobanCanvasGameBoard"
 import { LevelCompletionDialog } from "./LevelCompletionDialog"
-import { LoadingState, ErrorState, GameControls, GameStats, InitialState } from "./GameStateComponents"
+import {
+  LoadingState,
+  ErrorState,
+  GameControls,
+  GameStats,
+  InitialState,
+} from "./GameStateComponents"
 
 export default function ExpertSokobanGame() {
   const [gameState, setGameState] = useState<GameState | null>(null)
-  const [animationFrame, setAnimationFrame] = useState<"default" | "inbetween">("default")
+  const [animationFrame, setAnimationFrame] = useState<"default" | "inbetween">(
+    "default"
+  )
   const [levelNumber, setLevelNumber] = useState<number>(1)
   const [showCompletionDialog, setShowCompletionDialog] = useState(false)
   const [seed, setSeed] = useState<string>("")
@@ -63,7 +87,18 @@ export default function ExpertSokobanGame() {
       if (!gameState || isLoading || error || showCompletionDialog) return
 
       // Prevent default behavior for arrow keys to avoid scrolling
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d"].includes(e.key)) {
+      if (
+        [
+          "ArrowUp",
+          "ArrowDown",
+          "ArrowLeft",
+          "ArrowRight",
+          "w",
+          "a",
+          "s",
+          "d",
+        ].includes(e.key)
+      ) {
         e.preventDefault()
       }
 
@@ -102,7 +137,9 @@ export default function ExpertSokobanGame() {
       }
 
       if (direction) {
-        setGameState((prevState) => (prevState ? movePlayer(prevState, direction!) : null))
+        setGameState((prevState) =>
+          prevState ? movePlayer(prevState, direction!) : null
+        )
 
         // Start animation
         setAnimationFrame("inbetween")
@@ -118,7 +155,7 @@ export default function ExpertSokobanGame() {
         }, 100)
       }
     },
-    [gameState, currentLevel, isLoading, error, showCompletionDialog],
+    [gameState, currentLevel, isLoading, error, showCompletionDialog]
   )
 
   // Reset current level
@@ -194,40 +231,57 @@ export default function ExpertSokobanGame() {
 
   // Loading state
   if (isLoading) {
-    return <LoadingState levelNumber={levelNumber} />
+    return <LoadingState />
   }
 
   // Error state
   if (error) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred"
-    return <ErrorState levelNumber={levelNumber} errorMessage={errorMessage} onRetry={retryAfterError} />
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred"
+    return (
+      <ErrorState
+        levelNumber={levelNumber}
+        errorMessage={errorMessage}
+        onRetry={retryAfterError}
+      />
+    )
   }
 
   return (
     <div className="flex flex-col items-center">
       {/* Level title */}
       <div className="text-center mb-6">
-        <h1 className="text-4xl font-pixel text-primary">Level {levelNumber}</h1>
+        <h1 className="text-4xl font-pixel text-primary">
+          Level {levelNumber}
+        </h1>
       </div>
 
       {/* Game controls */}
       <GameControls onReset={resetCurrentLevel} isLoading={isLoading}>
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline" size="icon" className="pixelated-border" aria-label="Game information">
+            <Button
+              variant="outline"
+              size="icon"
+              className="pixelated-border"
+              aria-label="Game information"
+            >
               <Info className="h-5 w-5" />
             </Button>
           </DialogTrigger>
           <DialogContent className="bg-background border-primary">
             <DialogHeader>
-              <DialogTitle className="font-pixel text-primary">Game Controls</DialogTitle>
+              <DialogTitle className="font-pixel text-primary">
+                Game Controls
+              </DialogTitle>
             </DialogHeader>
             <div className="font-mono text-foreground space-y-4">
               <div>
                 <h3 className="font-bold mb-2">Movement</h3>
                 <ul className="list-disc list-inside space-y-1">
                   <li>
-                    <span className="font-bold">WASD</span> or <span className="font-bold">Arrow Keys</span> to move
+                    <span className="font-bold">WASD</span> or{" "}
+                    <span className="font-bold">Arrow Keys</span> to move
                   </li>
                 </ul>
               </div>
@@ -235,7 +289,8 @@ export default function ExpertSokobanGame() {
                 <h3 className="font-bold mb-2">Game Controls</h3>
                 <ul className="list-disc list-inside space-y-1">
                   <li>
-                    <span className="font-bold">R</span> to restart the current level
+                    <span className="font-bold">R</span> to restart the current
+                    level
                   </li>
                 </ul>
               </div>
@@ -285,4 +340,3 @@ export default function ExpertSokobanGame() {
     </div>
   )
 }
-
