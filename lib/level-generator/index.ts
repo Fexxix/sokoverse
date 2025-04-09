@@ -31,7 +31,7 @@ function formatToBoxoban(gridString: string): string[] {
  * @returns Promise that resolves to level data or null if generation fails
  */
 export async function generateSokobanLevelServerSide(
-  parameters: SokobanLevelParameters = {},
+  parameters: SokobanLevelParameters = {}
 ): Promise<SokobanLevelResult | null> {
   const SERVER_TIMEOUT_MS = 10000 // 10 second timeout for server
   const CHUNK_SIZE = 200 // Larger chunk size for server processing
@@ -65,7 +65,12 @@ export async function generateSokobanLevelServerSide(
 
         remainingAttempts--
 
-        if (grid.applyTemplates() && grid.isGoodCandidate() && grid.redeployGoals() && grid.generateFarthestBoxes()) {
+        if (
+          grid.applyTemplates() &&
+          grid.isGoodCandidate() &&
+          grid.redeployGoals() &&
+          grid.generateFarthestBoxes()
+        ) {
           resolve({
             level: formatToBoxoban(grid.toReadableString()),
             maxPushes: grid.getSolutionStep(),
@@ -87,7 +92,7 @@ export async function generateSokobanLevelServerSide(
  * @returns Promise that resolves to level data or null if generation fails
  */
 export function generateSokobanLevelClientSide(
-  parameters: SokobanLevelParameters = {},
+  parameters: SokobanLevelParameters = {}
 ): Promise<SokobanLevelResult | null> {
   const CLIENT_CHUNK_SIZE = 100 // Smaller chunks for smoother client experience
 
@@ -114,7 +119,12 @@ export function generateSokobanLevelClientSide(
 
         remainingAttempts--
 
-        if (grid.applyTemplates() && grid.isGoodCandidate() && grid.redeployGoals() && grid.generateFarthestBoxes()) {
+        if (
+          grid.applyTemplates() &&
+          grid.isGoodCandidate() &&
+          grid.redeployGoals() &&
+          grid.generateFarthestBoxes()
+        ) {
           resolve({
             level: formatToBoxoban(grid.toReadableString()),
             maxPushes: grid.getSolutionStep(),
@@ -131,7 +141,8 @@ export function generateSokobanLevelClientSide(
 }
 
 // Keep the original function for backward compatibility
-export function generateSokobanLevel(parameters: SokobanLevelParameters = {}): Promise<SokobanLevelResult | null> {
+export function generateSokobanLevel(
+  parameters: SokobanLevelParameters = {}
+): Promise<SokobanLevelResult | null> {
   return generateSokobanLevelClientSide(parameters)
 }
-
