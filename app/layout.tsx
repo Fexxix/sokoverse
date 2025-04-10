@@ -26,6 +26,9 @@ const vt323 = VT323({
 export const metadata = {
   title: "Sokoverse - Push. Solve. Repeat.",
   description: "A modern Sokoban puzzle platform with endless challenges",
+  icons: {
+    icon: "/icon.png", // default
+  },
 }
 
 export default async function RootLayout({
@@ -41,6 +44,13 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="prefetch" href="/icon.png" as="image" />
+        <link rel="prefetch" href="/icon-blue.png" as="image" />
+        <link rel="prefetch" href="/icon-purple.png" as="image" />
+        <link rel="prefetch" href="/icon-gray.png" as="image" />
+      </head>
+
       <body
         className={`${pressStart2P.variable} ${vt323.variable} font-sans bg-background text-foreground`}
       >

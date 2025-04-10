@@ -29,5 +29,5 @@ export default function ThemeFaviconUpdater() {
     }
   }, [theme])
 
-  return <></>
+  return null
 }
