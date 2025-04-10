@@ -2,7 +2,6 @@
 
 import { useTheme } from "next-themes"
 import Image from "next/image"
-import { useEffect, useState } from "react"
 
 export default function ThemedHeroIcon() {
   const { theme } = useTheme()

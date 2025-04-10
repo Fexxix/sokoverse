@@ -227,6 +227,7 @@ export default function ExpertSokobanGame() {
         setHasInitialized(true)
       }
     }
+    // TODO: refactor this disgusting workaround
   }, [levelData?.join("")])
 
   // Loading state

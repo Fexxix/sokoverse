@@ -2,7 +2,6 @@ import TypingEffect from "@/components/TypingEffect"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
-import Image from "next/image"
 import ThemedHeroIcon from "@/components/ThemedHeroIcon"
 
 export default function Home() {
