@@ -10,6 +10,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { getCurrentSession } from "@/lib/server/auth/session"
 import NextTopLoader from "nextjs-toploader"
 import ThemeFaviconUpdater from "@/components/ThemeFaviconUpdater"
+import PreloadResources from "@/components/PreloadResources"
 
 const pressStart2P = Press_Start_2P({
   weight: "400",
@@ -44,16 +45,10 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="prefetch" href="/icon.png" as="image" />
-        <link rel="prefetch" href="/icon-blue.png" as="image" />
-        <link rel="prefetch" href="/icon-purple.png" as="image" />
-        <link rel="prefetch" href="/icon-gray.png" as="image" />
-      </head>
-
       <body
         className={`${pressStart2P.variable} ${vt323.variable} font-sans bg-background text-foreground`}
       >
+        <PreloadResources />
         <NextTopLoader showSpinner={false} />
         <Providers initialAuthState={initialAuthState}>
           <ThemeFaviconUpdater />
