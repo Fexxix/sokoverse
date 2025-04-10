@@ -9,6 +9,7 @@ import SoundEffect from "@/components/SoundEffect"
 import { Toaster } from "@/components/ui/toaster"
 import { getCurrentSession } from "@/lib/server/auth/session"
 import NextTopLoader from "nextjs-toploader"
+import ThemeFaviconUpdater from "@/components/ThemeFaviconUpdater"
 
 const pressStart2P = Press_Start_2P({
   weight: "400",
@@ -25,7 +26,6 @@ const vt323 = VT323({
 export const metadata = {
   title: "Sokoverse - Push. Solve. Repeat.",
   description: "A modern Sokoban puzzle platform with endless challenges",
-  generator: "v0.dev",
 }
 
 export default async function RootLayout({
@@ -46,9 +46,10 @@ export default async function RootLayout({
       >
         <NextTopLoader showSpinner={false} />
         <Providers initialAuthState={initialAuthState}>
+          <ThemeFaviconUpdater />
           <PixelatedBackground />
           <FloatingPixels />
-          <div className="max-w-5xl mx-auto px-4">
+          <div className="grid grid-rows-[auto_1fr] min-h-screen max-w-5xl mx-auto px-4">
             <Navbar />
             <main className="py-8">{children}</main>
           </div>

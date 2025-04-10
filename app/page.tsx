@@ -1,17 +1,16 @@
-import SokoverseLogo from "@/components/SokoverseLogo"
 import TypingEffect from "@/components/TypingEffect"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
+import Image from "next/image"
+import ThemedHeroIcon from "@/components/ThemedHeroIcon"
 
 export default function Home() {
   return (
     <div className="min-h-[calc(100vh-200px)] flex flex-col items-center justify-center">
       {/* Hero Section */}
       <div className="w-full max-w-4xl text-center my-12 relative z-10">
-        <div className="flex justify-center mb-8">
-          <SokoverseLogo />
-        </div>
+        <ThemedHeroIcon />
         <h1 className="text-4xl md:text-5xl font-pixel mb-4">SOKOVERSE</h1>
         <div className="h-8 flex items-center justify-center">
           <TypingEffect

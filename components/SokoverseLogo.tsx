@@ -1,5 +1,3 @@
-import type React from "react"
-
 const SokoverseLogo: React.FC = () => {
   return (
     <div className="w-24 h-24 grid grid-cols-8 grid-rows-8 gap-0.5 mb-4 relative">
@@ -33,4 +31,3 @@ const SokoverseLogo: React.FC = () => {
 }
 
 export default SokoverseLogo
-

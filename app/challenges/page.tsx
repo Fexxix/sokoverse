@@ -1,14 +1,10 @@
 import ModeButton from "@/components/ModeButton"
-import SokoverseLogo from "@/components/SokoverseLogo"
 
 export default function ChallengesPage() {
   return (
     <div className="min-h-[calc(100vh-200px)] flex flex-col items-center relative z-10">
       {/* Header */}
       <div className="w-full max-w-4xl text-center mb-12">
-        <div className="flex justify-center mb-8">
-          <SokoverseLogo />
-        </div>
         <h1 className="text-4xl md:text-5xl font-pixel mb-4">
           CHOOSE YOUR CHALLENGE
         </h1>
