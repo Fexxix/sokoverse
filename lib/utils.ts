@@ -5,8 +5,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-const defineSpriteMap = <T extends Record<string, any>>(map: T) => map
-
 export const spriteMap = {
   themes: {
     blue: {

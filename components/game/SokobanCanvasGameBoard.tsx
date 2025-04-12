@@ -72,15 +72,7 @@ export default function SokobanCanvasGameBoard({
 
       grid.forEach((row, y) => {
         row.forEach((cell, x) => {
-          drawFloorAndEdgeWallBorders(
-            ctx,
-            spriteSheet,
-            grid,
-            x,
-            y,
-            cell,
-            theme as SpriteThemesKeyType
-          )
+          drawFloorAndEdgeWallBorders(ctx, spriteSheet, grid, x, y, cell)
 
           const sprite = getSprite(
             cell,
@@ -150,8 +142,7 @@ function drawFloorAndEdgeWallBorders(
   grid: string[][],
   x: number,
   y: number,
-  cell: string,
-  theme: SpriteThemesKeyType
+  cell: string
 ) {
   if (cell === "-")
     ctx.drawImage(
