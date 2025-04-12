@@ -38,4 +38,3 @@ const PixelatedBackground = () => {
 }
 
 export default PixelatedBackground
-
