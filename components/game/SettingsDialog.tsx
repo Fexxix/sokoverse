@@ -23,41 +23,30 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
+import { ENDLESS_PRESET_CONFIG } from "@/lib/common/constants"
 
 // Level presets with performance indicators
-export const PRESET_LEVELS = {
+export const PRESET_LEVELS_WITH_DESCRIPTION = {
   casual: {
-    width: 7,
-    height: 7,
-    boxes: 2,
-    minWalls: 10,
+    ...ENDLESS_PRESET_CONFIG.casual,
     label: "Quick Puzzle",
     description: "Small grid, perfect for a quick brain teaser",
     performance: "Lightning Fast ⚡",
   },
   balanced: {
-    width: 9,
-    height: 9,
-    boxes: 3,
-    minWalls: 13,
+    ...ENDLESS_PRESET_CONFIG.balanced,
     label: "Classic Challenge",
     description: "The perfect balance of fun and challenge",
     performance: "Speedy Generation 🚀",
   },
   challenging: {
-    width: 9,
-    height: 12,
-    boxes: 3,
-    minWalls: 15,
+    ...ENDLESS_PRESET_CONFIG.challenging,
     label: "Brain Bender",
     description: "More complex puzzles for the strategic thinker",
     performance: "Brief Pause ⏱️",
   },
   extended: {
-    width: 12,
-    height: 12,
-    boxes: 3,
-    minWalls: 12,
+    ...ENDLESS_PRESET_CONFIG.extended,
     label: "Puzzle Palace",
     description: "Larger playing field with more room to maneuver",
     performance: "Worth the Wait 🧠",
@@ -69,7 +58,7 @@ export type LevelSettings = {
   height: number
   boxes: number
   minWalls: number
-  category: keyof typeof PRESET_LEVELS
+  category: keyof typeof PRESET_LEVELS_WITH_DESCRIPTION
 }
 
 interface SettingsDialogProps {
@@ -128,8 +117,10 @@ export function SettingsDialog({
     }
   }
 
-  const handlePresetSelect = (presetKey: keyof typeof PRESET_LEVELS) => {
-    const newSettings = PRESET_LEVELS[presetKey]
+  const handlePresetSelect = (
+    presetKey: keyof typeof PRESET_LEVELS_WITH_DESCRIPTION
+  ) => {
+    const newSettings = PRESET_LEVELS_WITH_DESCRIPTION[presetKey]
 
     // If this is already the current preset, do nothing
     if (currentPreset === presetKey) {
@@ -209,41 +200,45 @@ export function SettingsDialog({
 
           <div className="py-4 space-y-4">
             <div className="space-y-2">
-              {Object.entries(PRESET_LEVELS).map(([key, preset]) => (
-                <div
-                  key={key}
-                  className={`p-4 transition-colors rounded-md border ${
-                    currentPreset === key
-                      ? "border-primary bg-primary/10"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-pixel text-sm">{preset.label}</h3>
-                    <span className="text-xs font-mono text-primary/70">
-                      {preset.performance}
-                    </span>
-                  </div>
-                  <div className="font-mono text-xs text-foreground/70 mb-3">
-                    {preset.description}
-                  </div>
-                  <div className="font-mono text-xs text-foreground/50 mb-3">
-                    {preset.width}×{preset.height} grid • {preset.boxes} boxes •{" "}
-                    {preset.minWalls} walls
-                  </div>
-                  <Button
-                    variant={currentPreset === key ? "default" : "outline"}
-                    size="sm"
-                    className="w-full font-pixel pixelated-border text-xs"
-                    onClick={() =>
-                      handlePresetSelect(key as keyof typeof PRESET_LEVELS)
-                    }
-                    disabled={isLoading}
+              {Object.entries(PRESET_LEVELS_WITH_DESCRIPTION).map(
+                ([key, preset]) => (
+                  <div
+                    key={key}
+                    className={`p-4 transition-colors rounded-md border ${
+                      currentPreset === key
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:border-primary/50"
+                    }`}
                   >
-                    {currentPreset === key ? "CURRENT" : "SELECT"}
-                  </Button>
-                </div>
-              ))}
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="font-pixel text-sm">{preset.label}</h3>
+                      <span className="text-xs font-mono text-primary/70">
+                        {preset.performance}
+                      </span>
+                    </div>
+                    <div className="font-mono text-xs text-foreground/70 mb-3">
+                      {preset.description}
+                    </div>
+                    <div className="font-mono text-xs text-foreground/50 mb-3">
+                      {preset.width}×{preset.height} grid • {preset.boxes} boxes
+                      • {preset.minWalls} walls
+                    </div>
+                    <Button
+                      variant={currentPreset === key ? "default" : "outline"}
+                      size="sm"
+                      className="w-full font-pixel pixelated-border text-xs"
+                      onClick={() =>
+                        handlePresetSelect(
+                          key as keyof typeof PRESET_LEVELS_WITH_DESCRIPTION
+                        )
+                      }
+                      disabled={isLoading}
+                    >
+                      {currentPreset === key ? "CURRENT" : "SELECT"}
+                    </Button>
+                  </div>
+                )
+              )}
             </div>
 
             <div className="bg-secondary/20 p-4 rounded-md">
