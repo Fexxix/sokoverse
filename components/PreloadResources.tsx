@@ -7,6 +7,7 @@ export default function PreloadResources() {
   preload("/icon-blue.png", { as: "image" })
   preload("/icon-purple.png", { as: "image" })
   preload("/icon-gray.png", { as: "image" })
+  preload("/sprite_sheet.png", { as: "image" })
 
   return null
 }

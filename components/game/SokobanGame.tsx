@@ -19,7 +19,9 @@ import {
 } from "@/components/ui/dialog"
 import { Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import SokobanCanvasGameBoard from "./SokobanCanvasGameBoard"
+import SokobanCanvasGameBoard, {
+  type AnimationFrame,
+} from "./SokobanCanvasGameBoard"
 import { SettingsDialog, type LevelSettings } from "./SettingsDialog"
 import { LevelCompletionDialog } from "./LevelCompletionDialog"
 import { useLocalStorage } from "@/hooks/useLocalStorage"
@@ -49,9 +51,12 @@ export default function SokobanGame() {
   const [hasSetInitialSettings, setHasSetInitialSettings] =
     useLocalStorage<boolean>("sokoverse-has-set-initial-settings", false)
   const [gameState, setGameState] = useState<GameState | null>(null)
-  const [animationFrame, setAnimationFrame] = useState<"default" | "inbetween">(
-    "default"
-  )
+  const [keyHandled, setKeyHandled] = useState(false)
+  const [animationFrame, setAnimationFrame] = useState<AnimationFrame>({
+    current: 1,
+    prev: 1,
+    type: "default",
+  })
   const [levelNumber, setLevelNumber] = useState<number>(1)
   const [showSettingsDialog, setShowSettingsDialog] = useState(false)
   const [showCompletionDialog, setShowCompletionDialog] = useState(false)
@@ -114,8 +119,6 @@ export default function SokobanGame() {
   // Function to handle keyboard input
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (!gameState || showCompletionDialog) return
-
       // Prevent default behavior for arrow keys to avoid scrolling
       if (
         [
@@ -131,6 +134,8 @@ export default function SokobanGame() {
       ) {
         e.preventDefault()
       }
+
+      if (!gameState || showCompletionDialog || keyHandled) return
 
       if (gameState.isCompleted) return
 
@@ -169,12 +174,17 @@ export default function SokobanGame() {
       }
 
       if (direction) {
+        setKeyHandled(true)
         setGameState((prevState) =>
           prevState ? movePlayer(prevState, direction!) : null
         )
 
         // Start animation
-        setAnimationFrame("inbetween")
+        setAnimationFrame((animationFrame) => ({
+          current: animationFrame.prev === 1 ? 2 : 1,
+          prev: animationFrame.current,
+          type: "inbetween",
+        }))
 
         // Clear any existing animation timer
         if (animationTimerRef.current) {
@@ -183,12 +193,19 @@ export default function SokobanGame() {
 
         // Reset animation after a short delay
         animationTimerRef.current = setTimeout(() => {
-          setAnimationFrame("default")
+          setAnimationFrame((animationFrame) => ({
+            ...animationFrame,
+            type: "default",
+          }))
         }, 100)
       }
     },
-    [gameState, showCompletionDialog]
+    [gameState, showCompletionDialog, keyHandled]
   )
+
+  const handleKeyUp = useCallback(() => {
+    setKeyHandled(false)
+  }, [])
 
   // Generate a new level
   const generateNewLevel = useCallback(() => {
@@ -240,11 +257,13 @@ export default function SokobanGame() {
   // Add keyboard event listener
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown)
+    window.addEventListener("keyup", handleKeyUp)
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("keyup", handleKeyUp)
     }
-  }, [handleKeyDown])
+  }, [handleKeyDown, handleKeyUp])
 
   // Get game stats
   const stats = gameState ? getGameStats(gameState) : { steps: 0, time: 0 }

@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { spriteMap } from "@/lib/utils"
+import { spriteMap, type SpriteThemesKeyType } from "@/lib/utils"
+import { useTheme } from "next-themes"
 
 const TILE_SIZE = 48
 const CANVAS_PADDING = 20
@@ -12,10 +13,16 @@ const GOAL_OFFSET = 14
 const GOAL_SIZE = 20
 const BORDER_COLOR = "#f75040"
 
+export type AnimationFrame = {
+  current: 1 | 2 // 1 and 2 are inbetween frames
+  prev: 1 | 2
+  type: "default" | "inbetween"
+}
+
 interface SokobanCanvasGameBoardProps {
   grid: string[][]
   movementDirection: "up" | "down" | "left" | "right" | null
-  animationFrame: "default" | "inbetween"
+  animationFrame: AnimationFrame
 }
 
 export default function SokobanCanvasGameBoard({
@@ -23,38 +30,67 @@ export default function SokobanCanvasGameBoard({
   movementDirection,
   animationFrame,
 }: SokobanCanvasGameBoardProps) {
+  const { theme } = useTheme()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  // Store the offset values in refs so they persist between renders
+  const offsetRef = useRef({ x: 0, y: 0 })
 
   const isPlayerCell = (cell: string) => cell === "@" || cell === "+"
   const levelWidth = grid[0].length * TILE_SIZE
   const levelHeight = grid.length * TILE_SIZE
 
+  // Calculate offsets once when the component mounts or grid size changes
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const offsetX = (canvas.width - levelWidth) / 2
-    const offsetY = (canvas.height - levelHeight) / 2
+    offsetRef.current = {
+      x: (canvas.width - levelWidth) / 2,
+      y: (canvas.height - levelHeight) / 2,
+    }
+  }, [levelWidth, levelHeight])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    canvasRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
 
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    ctx.save()
-    ctx.translate(offsetX, offsetY)
-
     const spriteSheet = new Image()
-    spriteSheet.src = "/sprites.png"
+    spriteSheet.src = "/sprite_sheet.png"
 
     spriteSheet.onload = () => {
+      // Clear the entire canvas including the translated area
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
       ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      // Apply translation once
+      ctx.setTransform(1, 0, 0, 1, offsetRef.current.x, offsetRef.current.y)
 
       grid.forEach((row, y) => {
         row.forEach((cell, x) => {
-          drawFloorAndEdgeWallBorders(ctx, spriteSheet, grid, x, y, cell)
+          drawFloorAndEdgeWallBorders(
+            ctx,
+            spriteSheet,
+            grid,
+            x,
+            y,
+            cell,
+            theme as SpriteThemesKeyType
+          )
 
-          const sprite = getSprite(cell, movementDirection, animationFrame)
+          const sprite = getSprite(
+            cell,
+            movementDirection,
+            animationFrame,
+            theme as SpriteThemesKeyType
+          )
 
           if (sprite) {
+            // Draw the sprite with the correct offset, player and goal have different offsets
             if (isPlayerCell(cell)) {
               ctx.drawImage(
                 spriteSheet,
@@ -65,7 +101,7 @@ export default function SokobanCanvasGameBoard({
                 x * TILE_SIZE + PLAYER_OFFSET_X,
                 y * TILE_SIZE,
                 PLAYER_WIDTH,
-                PLAYER_HEIGHT,
+                PLAYER_HEIGHT
               )
             } else if (cell === ".") {
               ctx.drawImage(
@@ -77,10 +113,9 @@ export default function SokobanCanvasGameBoard({
                 x * TILE_SIZE + GOAL_OFFSET,
                 y * TILE_SIZE + GOAL_OFFSET,
                 GOAL_SIZE,
-                GOAL_SIZE,
+                GOAL_SIZE
               )
             } else {
-              // Fallback for all other cells
               ctx.drawImage(
                 spriteSheet,
                 sprite.x,
@@ -90,18 +125,23 @@ export default function SokobanCanvasGameBoard({
                 x * TILE_SIZE,
                 y * TILE_SIZE,
                 TILE_SIZE,
-                TILE_SIZE,
+                TILE_SIZE
               )
             }
           }
         })
       })
-
-      ctx.restore()
     }
-  }, [grid, movementDirection, animationFrame])
+  }, [grid, movementDirection, animationFrame, theme])
 
-  return <canvas ref={canvasRef} width={levelWidth + CANVAS_PADDING} height={levelHeight + CANVAS_PADDING} />
+  return (
+    <canvas
+      ref={canvasRef}
+      width={levelWidth + CANVAS_PADDING}
+      height={levelHeight + CANVAS_PADDING}
+      // className="border borer-border shadow-primary shadow-2xl rounded-md relative z-30"
+    />
+  )
 }
 
 function drawFloorAndEdgeWallBorders(
@@ -111,30 +151,31 @@ function drawFloorAndEdgeWallBorders(
   x: number,
   y: number,
   cell: string,
+  theme: SpriteThemesKeyType
 ) {
   if (cell === "-")
     ctx.drawImage(
       spriteSheet,
-      spriteMap.emptyTile.x,
-      spriteMap.emptyTile.y,
-      spriteMap.emptyTile.w,
-      spriteMap.emptyTile.h,
+      spriteMap.tiles.emptyTile.x,
+      spriteMap.tiles.emptyTile.y,
+      spriteMap.tiles.emptyTile.w,
+      spriteMap.tiles.emptyTile.h,
       x * TILE_SIZE,
       y * TILE_SIZE,
       TILE_SIZE,
-      TILE_SIZE,
+      TILE_SIZE
     )
   else if (isEdgeWall(grid, x, y)) {
     ctx.drawImage(
       spriteSheet,
-      spriteMap.floor.x,
-      spriteMap.floor.y,
-      spriteMap.floor.w,
-      spriteMap.floor.h,
+      spriteMap.tiles.floor.x,
+      spriteMap.tiles.floor.y,
+      spriteMap.tiles.floor.w,
+      spriteMap.tiles.floor.h,
       x * TILE_SIZE,
       y * TILE_SIZE,
       TILE_SIZE,
-      TILE_SIZE,
+      TILE_SIZE
     )
 
     // Get uncovered edges for the current tile
@@ -142,7 +183,7 @@ function drawFloorAndEdgeWallBorders(
 
     // Draw borders only on uncovered edges
     ctx.strokeStyle = BORDER_COLOR
-    ctx.lineWidth = 10
+    ctx.lineWidth = 4
     ctx.lineCap = "round"
 
     uncoveredEdges.forEach((edge) => {
@@ -176,14 +217,14 @@ function drawFloorAndEdgeWallBorders(
   } else
     ctx.drawImage(
       spriteSheet,
-      spriteMap.floor.x,
-      spriteMap.floor.y,
-      spriteMap.floor.w,
-      spriteMap.floor.h,
+      spriteMap.tiles.floor.x,
+      spriteMap.tiles.floor.y,
+      spriteMap.tiles.floor.w,
+      spriteMap.tiles.floor.h,
       x * TILE_SIZE,
       y * TILE_SIZE,
       TILE_SIZE,
-      TILE_SIZE,
+      TILE_SIZE
     )
 }
 
@@ -226,40 +267,58 @@ function getUncoveredEdges(grid: string[][], x: number, y: number): string[] {
 function getSprite(
   cell: string,
   movementDirection: "up" | "down" | "left" | "right" | null,
-  animationFrame: "default" | "inbetween",
+  animationFrame: AnimationFrame,
+  theme: SpriteThemesKeyType
 ) {
-  switch (cell) {
-    case "@":
-    case "+":
-      return movementDirection === "up"
-        ? animationFrame === "inbetween"
-          ? spriteMap.playerUpInbetween
-          : spriteMap.playerUp
-        : movementDirection === "down"
-          ? animationFrame === "inbetween"
-            ? spriteMap.playerDownInbetween
-            : spriteMap.playerDown
-          : movementDirection === "left"
-            ? animationFrame === "inbetween"
-              ? spriteMap.playerLeftInbetween
-              : spriteMap.playerLeft
-            : animationFrame === "inbetween"
-              ? spriteMap.playerRightInbetween
-              : spriteMap.playerRight
-    case "$":
-      return spriteMap.box
-    case "*":
-      return spriteMap.boxOnGoal
-    case ".":
-      return spriteMap.goal
-    case "#":
-      return spriteMap.wall
-    case "-":
-      return spriteMap.emptyTile
-    case " ":
+  switch (true) {
+    case cell === "@" || cell === "+":
+      switch (movementDirection) {
+        case "up":
+          if (animationFrame.type === "inbetween") {
+            return animationFrame.current === 1
+              ? spriteMap.themes[theme].playerUpInbetween1
+              : spriteMap.themes[theme].playerUpInbetween2
+          } else {
+            return spriteMap.themes[theme].playerUp
+          }
+        case "down":
+          if (animationFrame.type === "inbetween") {
+            return animationFrame.current === 1
+              ? spriteMap.themes[theme].playerDownInbetween1
+              : spriteMap.themes[theme].playerDownInbetween2
+          } else {
+            return spriteMap.themes[theme].playerDown
+          }
+        case "left":
+          if (animationFrame.type === "inbetween") {
+            return animationFrame.current === 1
+              ? spriteMap.themes[theme].playerLeftInbetween1
+              : spriteMap.themes[theme].playerLeftInbetween2
+          } else {
+            return spriteMap.themes[theme].playerLeft
+          }
+        default:
+          if (animationFrame.type === "inbetween") {
+            return animationFrame.current === 1
+              ? spriteMap.themes[theme].playerRightInbetween1
+              : spriteMap.themes[theme].playerRightInbetween2
+          } else {
+            return spriteMap.themes[theme].playerRight
+          }
+      }
+    case cell === "$":
+      return spriteMap.themes[theme].box
+    case cell === "*":
+      return spriteMap.themes[theme].boxOnGoal
+    case cell === ".":
+      return spriteMap.themes[theme].goal
+    case cell === "#":
+      return spriteMap.tiles.wall
+    case cell === "-":
+      return spriteMap.tiles.emptyTile
+    case cell === " ":
       return null // No additional sprite needed for empty space
     default:
       return null
   }
 }
-
