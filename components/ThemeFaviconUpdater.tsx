@@ -1,12 +1,21 @@
 "use client"
 
 import { useTheme } from "next-themes"
-import { useEffect } from "react"
+import { usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
 
 export default function ThemeFaviconUpdater() {
   const { theme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted) return // Prevents hydration mismatch
+
     const favicon = document.querySelector("link[rel='icon']")
 
     if (!theme && !favicon) return
@@ -27,7 +36,7 @@ export default function ThemeFaviconUpdater() {
       default:
         favicon?.setAttribute("href", "/icon.png")
     }
-  }, [theme])
+  }, [theme, mounted, pathname])
 
   return null
 }
