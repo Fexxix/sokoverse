@@ -9,6 +9,7 @@ import {
   getGameStats,
   formatTime,
   type GameState,
+  GameStats as GameStatsType,
 } from "@/lib/game-logic"
 import {
   Dialog,
@@ -22,9 +23,8 @@ import { Button } from "@/components/ui/button"
 import SokobanCanvasGameBoard, {
   type AnimationFrame,
 } from "./SokobanCanvasGameBoard"
-import { SettingsDialog, type LevelSettings } from "./SettingsDialog"
+import { SettingsDialog } from "./SettingsDialog"
 import { LevelCompletionDialog } from "./LevelCompletionDialog"
-import { useLocalStorage } from "@/hooks/useLocalStorage"
 import { useToast } from "@/hooks/use-toast"
 import {
   LoadingState,
@@ -32,58 +32,62 @@ import {
   GameControls,
   GameStats,
 } from "./GameStateComponents"
+import type { EndlessSettings } from "@/lib/common/constants"
+import {
+  generateEndlessLevel,
+  submitLevel,
+  updateLevel,
+} from "@/app/endless/actions"
+import { hmacSign } from "@/lib/client/wasm/hmac"
+import { useAuth } from "@/contexts/auth"
 
-// Default level settings
-const DEFAULT_LEVEL_SETTINGS: LevelSettings = {
-  width: 9,
-  height: 9,
-  boxes: 3,
-  minWalls: 13,
-  category: "balanced",
-}
+type LURDMove = "l" | "u" | "r" | "d"
 
-export default function SokobanGame() {
-  const [storedlevelSettings, setStoredLevelSettings] =
-    useLocalStorage<LevelSettings>(
-      "sokoverse-level-settings",
-      DEFAULT_LEVEL_SETTINGS
-    )
-  const [hasSetInitialSettings, setHasSetInitialSettings] =
-    useLocalStorage<boolean>("sokoverse-has-set-initial-settings", false)
-  const [gameState, setGameState] = useState<GameState | null>(null)
+export default function SokobanGame({
+  endlessSettings,
+  initialLevel,
+  firstVisit,
+}: {
+  endlessSettings: EndlessSettings | null
+  initialLevel: { level: string[]; levelNumber: number; id: string } | null
+  firstVisit: boolean
+}) {
+  const [gameState, setGameState] = useState<GameState | null>(
+    initialLevel ? initializeGameState(initialLevel.level) : null
+  )
   const [keyHandled, setKeyHandled] = useState(false)
   const [animationFrame, setAnimationFrame] = useState<AnimationFrame>({
     current: 1,
     prev: 1,
     type: "default",
   })
-  const [levelNumber, setLevelNumber] = useState<number>(1)
+  const [levelNumber, setLevelNumber] = useState<number>(
+    initialLevel?.levelNumber ?? 1
+  )
+  const [levelId, setLevelId] = useState(initialLevel?.id ?? "")
   const [showSettingsDialog, setShowSettingsDialog] = useState(false)
   const [showCompletionDialog, setShowCompletionDialog] = useState(false)
+  const [moves, setMoves] = useState<LURDMove[]>([])
+  const [isReplay, setIsReplay] = useState(false)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const animationTimerRef = useRef<NodeJS.Timeout | null>(null)
   const { toast } = useToast()
+  const { user } = useAuth()
+
+  // because revalidatePath doesn't refresh default values passed into useState
+  useEffect(() => {
+    if (!initialLevel) return
+    setGameState(initializeGameState(initialLevel.level))
+  }, [!!initialLevel, setGameState])
 
   // Mutation for generating a level via API
   const generateLevelMutation = useMutation({
-    mutationFn: async (settings: LevelSettings) => {
-      const response = await fetch("/api/generate-level", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(settings),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to generate level")
-      }
-
-      return response.json()
-    },
+    mutationFn: generateEndlessLevel,
     onSuccess: (data) => {
       if (data && data.level) {
         setGameState(initializeGameState(data.level))
+        setLevelNumber((data.levelNumber ?? 1) + 1)
+        setLevelId(data.id ?? "")
       }
     },
     onError: (error) => {
@@ -96,25 +100,76 @@ export default function SokobanGame() {
     },
   })
 
-  const hasInitialized = !!gameState
+  const submitLevelMutation = useMutation({
+    mutationFn: async ({
+      stats,
+      moves,
+    }: {
+      stats: GameStatsType
+      moves: LURDMove[]
+    }) => {
+      const strMoves = moves.join("")
+      //userId:currentLevelNumber:steps:time:moves
+      const payload = `${user?.id}:${levelNumber}:${stats.steps}:${stats.time}:${strMoves}`
+      const hash = await hmacSign(payload)
 
-  useEffect(() => {
-    if (!hasInitialized && hasSetInitialSettings) {
-      generateNewLevel()
-    }
-  }, [])
+      await submitLevel({
+        stats,
+        moves: strMoves,
+        hash,
+      })
+    },
+    onSuccess: () => {
+      toast({
+        title: "Level submitted",
+        description: "Your level has been submitted successfully.",
+      })
+    },
+  })
+
+  const updateLevelMutation = useMutation({
+    mutationFn: async ({
+      stats,
+      moves,
+      levelId,
+    }: {
+      stats: GameStatsType
+      moves: LURDMove[]
+      levelId: string
+    }) => {
+      const strMoves = moves.join("")
+      //userId:levelId:currentLevelNumber:steps:time:moves
+      const payload = `${user?.id}:${levelId}:${levelNumber}:${stats.steps}:${stats.time}:${strMoves}`
+      const hash = await hmacSign(payload)
+
+      await updateLevel({
+        stats,
+        moves: strMoves,
+        levelId,
+        hash,
+      })
+    },
+    onSuccess: () => {
+      setIsReplay(false)
+      toast({
+        title: "Level updated",
+        description: "Your level has been updated successfully.",
+      })
+    },
+  })
 
   // Check for level completion
   useEffect(() => {
     if (gameState?.isCompleted && !showCompletionDialog) {
       // Small delay to allow the player to see the completed level
       const timer = setTimeout(() => {
+        if (!isReplay) submitLevelMutation.mutate({ stats, moves })
         setShowCompletionDialog(true)
       }, 500)
 
       return () => clearTimeout(timer)
     }
-  }, [gameState?.isCompleted, showCompletionDialog])
+  }, [gameState?.isCompleted, showCompletionDialog, isReplay])
 
   // Function to handle keyboard input
   const handleKeyDown = useCallback(
@@ -178,6 +233,21 @@ export default function SokobanGame() {
         setGameState((prevState) =>
           prevState ? movePlayer(prevState, direction!) : null
         )
+        setMoves((prevMoves) => [
+          ...prevMoves,
+          (() => {
+            switch (direction) {
+              case "up":
+                return "u"
+              case "down":
+                return "d"
+              case "left":
+                return "l"
+              case "right":
+                return "r"
+            }
+          })(),
+        ])
 
         // Start animation
         setAnimationFrame((animationFrame) => ({
@@ -210,30 +280,44 @@ export default function SokobanGame() {
   // Generate a new level
   const generateNewLevel = useCallback(() => {
     setGameState(null)
-    generateLevelMutation.mutate(storedlevelSettings)
-  }, [storedlevelSettings, generateLevelMutation])
+    setMoves([])
+    generateLevelMutation.mutate({})
+  }, [generateLevelMutation])
+
+  const generateNewLevelAndDiscardCurrent = useCallback(() => {
+    setGameState(null)
+    setMoves([])
+    generateLevelMutation.mutate({ discardCurrentAndGenerateAnother: true })
+  }, [generateLevelMutation])
 
   // Reset current level
   const resetCurrentLevel = useCallback(() => {
-    if (generateLevelMutation.data && generateLevelMutation.data.level) {
-      setGameState(resetLevel(generateLevelMutation.data.level))
+    if (
+      (generateLevelMutation.data && generateLevelMutation.data.level) ||
+      initialLevel
+    ) {
+      setGameState(
+        resetLevel(generateLevelMutation.data?.level ?? initialLevel!.level)
+      )
+      setMoves([])
     }
-  }, [generateLevelMutation.data?.level])
+  }, [generateLevelMutation.data?.level, initialLevel])
 
   // Handle level completion and generate next level
   const handleNextLevel = useCallback(() => {
-    setLevelNumber((prev) => prev + 1)
     setShowCompletionDialog(false)
+    setIsReplay(false)
     generateNewLevel()
   }, [generateNewLevel])
 
   // Handle replaying the current level
   const handleReplayLevel = useCallback(() => {
     setShowCompletionDialog(false)
+    setIsReplay(true)
     resetCurrentLevel()
   }, [resetCurrentLevel])
 
-  // Update the timer every second
+  // Update the timer every millisecond
   useEffect(() => {
     if (gameState?.startTime && !gameState.isCompleted) {
       timerRef.current = setInterval(() => {
@@ -244,7 +328,7 @@ export default function SokobanGame() {
             elapsedTime: Date.now() - (prevState.startTime || 0),
           }
         })
-      }, 1000)
+      }, 1)
     }
 
     return () => {
@@ -268,6 +352,10 @@ export default function SokobanGame() {
   // Get game stats
   const stats = gameState ? getGameStats(gameState) : { steps: 0, time: 0 }
 
+  const handleUpdateLevel = useCallback(() => {
+    updateLevelMutation.mutate({ stats, moves, levelId })
+  }, [stats, moves, levelId])
+
   // Loading state
   const isLoading = generateLevelMutation.isPending
 
@@ -288,18 +376,37 @@ export default function SokobanGame() {
 
   const settingsDialog = (
     <SettingsDialog
-      generateNewLevel={generateNewLevel}
-      hasSetInitialSettings={hasSetInitialSettings}
-      storedlevelSettings={storedlevelSettings}
-      setHasSetInitialSettings={setHasSetInitialSettings}
-      setStoredLevelSettings={setStoredLevelSettings}
+      endlessSettings={endlessSettings}
       isLoading={isLoading}
       showSettingsDialog={showSettingsDialog}
       setShowSettingsDialog={setShowSettingsDialog}
       // TODO: refactor this later
       fromCompletionDialog={gameState?.isCompleted && showCompletionDialog}
+      firstVisit={firstVisit}
     />
   )
+
+  const submittingLevelErrorComponent = submitLevelMutation.isError ? (
+    <ErrorState
+      errorMessage={
+        submitLevelMutation.error instanceof Error
+          ? submitLevelMutation.error.message
+          : "An unknown error occurred"
+      }
+      onRetry={() => submitLevelMutation.mutate({ stats, moves })}
+    />
+  ) : null
+
+  const updatingLevelErrorComponent = updateLevelMutation.isError ? (
+    <ErrorState
+      errorMessage={
+        updateLevelMutation.error instanceof Error
+          ? updateLevelMutation.error.message
+          : "An unknown error occurred"
+      }
+      onRetry={handleUpdateLevel}
+    />
+  ) : null
 
   return (
     <div className="flex flex-col items-center">
@@ -313,7 +420,7 @@ export default function SokobanGame() {
       {/* Game controls */}
       <GameControls
         onReset={resetCurrentLevel}
-        onNewLevel={generateNewLevel}
+        onNewLevel={generateNewLevelAndDiscardCurrent}
         isLoading={isLoading}
       >
         {settingsDialog}
@@ -399,12 +506,19 @@ export default function SokobanGame() {
         isOpen={showCompletionDialog}
         onNextLevel={handleNextLevel}
         onReplayLevel={handleReplayLevel}
+        submittingLevelErrorComponent={submittingLevelErrorComponent}
         stats={{
           steps: stats.steps,
           time: formatTime(stats.time),
         }}
         mode="endless"
         settingsDialog={settingsDialog}
+        submittingLevel={submitLevelMutation.isPending}
+        updateLevel={isReplay ? handleUpdateLevel : null}
+        updatingLevel={isReplay ? updateLevelMutation.isPending : null}
+        updatingLevelErrorComponent={
+          isReplay ? updatingLevelErrorComponent : null
+        }
       />
     </div>
   )

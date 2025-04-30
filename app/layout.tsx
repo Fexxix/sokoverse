@@ -39,7 +39,14 @@ export default async function RootLayout({
 }) {
   const session = await getCurrentSession()
   const initialAuthState = {
-    user: session?.user ?? null,
+    user: session?.user
+      ? {
+          id: session.user.id,
+          name: session.user.name,
+          pictureURL: session.user.pictureURL,
+          isAnonymous: session.user.isAnonymous,
+        }
+      : null,
     isAuthenticated: !!session?.user,
   }
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Settings, Save, AlertTriangle } from "lucide-react"
+import { Settings, Save, AlertTriangle, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -23,7 +23,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { ENDLESS_PRESET_CONFIG } from "@/lib/common/constants"
+import {
+  ENDLESS_PRESET_CONFIG,
+  type EndlessPreset,
+  type EndlessSettings,
+} from "@/lib/common/constants"
+import { saveSettings } from "@/app/endless/actions"
+import { useMutation } from "@tanstack/react-query"
 
 // Level presets with performance indicators
 export const PRESET_LEVELS_WITH_DESCRIPTION = {
@@ -53,24 +59,13 @@ export const PRESET_LEVELS_WITH_DESCRIPTION = {
   },
 } as const
 
-export type LevelSettings = {
-  width: number
-  height: number
-  boxes: number
-  minWalls: number
-  category: keyof typeof PRESET_LEVELS_WITH_DESCRIPTION
-}
-
 interface SettingsDialogProps {
   isLoading?: boolean
   fromCompletionDialog?: boolean
+  endlessSettings: EndlessSettings | null
   showSettingsDialog: boolean
   setShowSettingsDialog: (open: boolean) => void
-  hasSetInitialSettings: boolean
-  setHasSetInitialSettings: (hasSetInitialSettings: boolean) => void
-  storedlevelSettings: LevelSettings
-  setStoredLevelSettings: (levelSettings: LevelSettings) => void
-  generateNewLevel: () => void
+  firstVisit: boolean
 }
 
 export function SettingsDialog({
@@ -78,22 +73,15 @@ export function SettingsDialog({
   fromCompletionDialog = false,
   showSettingsDialog,
   setShowSettingsDialog,
-  hasSetInitialSettings,
-  setHasSetInitialSettings,
-  storedlevelSettings,
-  setStoredLevelSettings,
-  generateNewLevel,
+  endlessSettings,
+  firstVisit,
 }: SettingsDialogProps) {
   const [showUnsavedChangesAlert, setShowUnsavedChangesAlert] = useState(false)
-  const [selectedSettings, setSelectedSettings] =
-    useState<LevelSettings>(storedlevelSettings)
+  const [selectedPreset, setSelectedPreset] = useState(
+    endlessSettings?.preset ?? "balanced"
+  )
   const [hasChanges, setHasChanges] = useState(false)
   const { toast } = useToast()
-
-  const currentPreset = selectedSettings.category
-
-  const isDefaultPreset = currentPreset === "balanced"
-  const firstVisit = !hasSetInitialSettings && isDefaultPreset
 
   useEffect(() => {
     // Show settings dialog if settings haven't been set yet (first visit)
@@ -101,6 +89,37 @@ export function SettingsDialog({
       return setShowSettingsDialog(true)
     }
   }, [firstVisit, setShowSettingsDialog])
+
+  const saveSettingsMutation = useMutation({
+    mutationFn: saveSettings,
+    onSuccess: () => {
+      toast({
+        title: "Settings Saved",
+        description: firstVisit
+          ? "Settings saved! Get ready to push some pixels!"
+          : "Your new settings will be applied to the next level.",
+      })
+
+      setShowSettingsDialog(false)
+      setHasChanges(false)
+
+      // If this is the first visit and settings have been selected, generate a new level
+
+      if (fromCompletionDialog) {
+        toast({
+          title: "Settings Saved",
+          description: "Your new settings will be applied to the next level.",
+        })
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to save settings",
+        variant: "destructive",
+      })
+    },
+  })
 
   const handleDialogOpenChange = (open: boolean) => {
     // If this is the first visit and no settings have been selected, don't allow closing the dialog
@@ -120,54 +139,32 @@ export function SettingsDialog({
   const handlePresetSelect = (
     presetKey: keyof typeof PRESET_LEVELS_WITH_DESCRIPTION
   ) => {
-    const newSettings = PRESET_LEVELS_WITH_DESCRIPTION[presetKey]
-
     // If this is already the current preset, do nothing
-    if (currentPreset === presetKey) {
+    if (selectedPreset === presetKey) {
       return
     }
 
     // Just update the selected settings, don't apply yet
-    setSelectedSettings({
-      width: newSettings.width,
-      height: newSettings.height,
-      boxes: newSettings.boxes,
-      minWalls: newSettings.minWalls,
-      category: presetKey,
-    })
+    setSelectedPreset(presetKey)
     setHasChanges(true)
   }
 
   const handleSaveSettings = () => {
-    applySettings(selectedSettings)
-  }
-
-  const applySettings = (settings: LevelSettings) => {
-    setStoredLevelSettings(settings)
-    if (!hasSetInitialSettings) setHasSetInitialSettings(true)
-    setShowSettingsDialog(false)
-    setHasChanges(false)
-
-    // If this is the first visit and settings have been selected, generate a new level
-    if (firstVisit) generateNewLevel()
-
-    if (fromCompletionDialog) {
-      toast({
-        title: "Settings Saved",
-        description: "Your new settings will be applied to the next level.",
-      })
-    }
+    saveSettingsMutation.mutate({
+      preset: selectedPreset,
+      pushRestriction: false,
+    })
   }
 
   const handleDiscardChanges = () => {
     setShowUnsavedChangesAlert(false)
-    setSelectedSettings(storedlevelSettings)
+    setSelectedPreset(endlessSettings?.preset ?? "balanced")
     setHasChanges(false)
     setShowSettingsDialog(false)
   }
 
   const handleSaveUnsavedChanges = () => {
-    applySettings(selectedSettings)
+    handleSaveSettings()
     setShowUnsavedChangesAlert(false)
   }
 
@@ -205,7 +202,7 @@ export function SettingsDialog({
                   <div
                     key={key}
                     className={`p-4 transition-colors rounded-md border ${
-                      currentPreset === key
+                      selectedPreset === key
                         ? "border-primary bg-primary/10"
                         : "border-border hover:border-primary/50"
                     }`}
@@ -224,7 +221,7 @@ export function SettingsDialog({
                       • {preset.minWalls} walls
                     </div>
                     <Button
-                      variant={currentPreset === key ? "default" : "outline"}
+                      variant={selectedPreset === key ? "default" : "outline"}
                       size="sm"
                       className="w-full font-pixel pixelated-border text-xs"
                       onClick={() =>
@@ -234,7 +231,7 @@ export function SettingsDialog({
                       }
                       disabled={isLoading}
                     >
-                      {currentPreset === key ? "CURRENT" : "SELECT"}
+                      {selectedPreset === key ? "CURRENT" : "SELECT"}
                     </Button>
                   </div>
                 )
@@ -253,10 +250,18 @@ export function SettingsDialog({
           <DialogFooter className="sticky -bottom-6 p-2 bg-background">
             <Button
               onClick={handleSaveSettings}
-              disabled={firstVisit ? false : !hasChanges}
+              disabled={
+                firstVisit
+                  ? false
+                  : !hasChanges || saveSettingsMutation.isPending
+              }
               className="font-pixel pixelated-border flex items-center"
             >
-              <Save className="h-4 w-4" />{" "}
+              {saveSettingsMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spinW" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}{" "}
               {firstVisit ? "Go with Default" : "Save"}
             </Button>
           </DialogFooter>

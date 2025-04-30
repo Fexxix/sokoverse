@@ -68,12 +68,22 @@ function findPlayerPosition(grid: string[][]): Position {
  * @param dy The y-direction of the move
  * @returns Whether the move is valid
  */
-function isValidMove(grid: string[][], pos: Position, dx: number, dy: number): boolean {
+function isValidMove(
+  grid: string[][],
+  pos: Position,
+  dx: number,
+  dy: number
+): boolean {
   const newX = pos.x + dx
   const newY = pos.y + dy
 
   // Check if the new position is within the grid
-  if (newY < 0 || newY >= grid.length || newX < 0 || newX >= grid[newY].length) {
+  if (
+    newY < 0 ||
+    newY >= grid.length ||
+    newX < 0 ||
+    newX >= grid[newY].length
+  ) {
     return false
   }
 
@@ -91,7 +101,12 @@ function isValidMove(grid: string[][], pos: Position, dx: number, dy: number): b
     const boxNewY = newY + dy
 
     // Check if the new box position is within the grid
-    if (boxNewY < 0 || boxNewY >= grid.length || boxNewX < 0 || boxNewX >= grid[boxNewY].length) {
+    if (
+      boxNewY < 0 ||
+      boxNewY >= grid.length ||
+      boxNewX < 0 ||
+      boxNewX >= grid[boxNewY].length
+    ) {
       return false
     }
 
@@ -110,7 +125,10 @@ function isValidMove(grid: string[][], pos: Position, dx: number, dy: number): b
  * @param direction The direction to move
  * @returns The new game state
  */
-export function movePlayer(state: GameState, direction: "up" | "down" | "left" | "right"): GameState {
+export function movePlayer(
+  state: GameState,
+  direction: "up" | "down" | "left" | "right"
+): GameState {
   // Start the timer on the first move
   if (state.startTime === null) {
     state = {
@@ -231,14 +249,24 @@ export function getGameStats(state: GameState): GameStats {
 }
 
 /**
- * Formats time in milliseconds to a readable format (mm:ss)
+ * Formats time in milliseconds to a readable format
  * @param time Time in milliseconds
  * @returns Formatted time string
  */
 export function formatTime(time: number): string {
-  const seconds = Math.floor(time / 1000)
-  const minutes = Math.floor(seconds / 60)
-  const remainingSeconds = seconds % 60
-  return `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`
-}
+  const minutes = Math.floor(time / 60000)
+  const seconds = Math.floor((time % 60000) / 1000)
+  const milliseconds = time % 1000
 
+  if (minutes > 0) {
+    return `${minutes.toString().padStart(2, "0")}:${seconds
+      .toString()
+      .padStart(2, "0")}:${milliseconds.toString().padStart(3, "0")}`
+  } else if (seconds > 0) {
+    return `${seconds.toString().padStart(2, "0")}:${milliseconds
+      .toString()
+      .padStart(3, "0")}`
+  } else {
+    return milliseconds.toString()
+  }
+}
