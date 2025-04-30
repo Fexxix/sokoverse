@@ -21,7 +21,3 @@ vercel_runtime = "1.1.3"
 [[bin]]
 name = "index"
 path = "api/check-solution/index.rs"
-
-[[bin]]
-name = "solution-checker"
-path = "api/check-solution/solution_checker.rs"
