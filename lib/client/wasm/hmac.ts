@@ -1,6 +1,6 @@
 import init, { hmac_sign } from "@/pkg/wasm-hmac/wasm_hmac"
 
-let wasm: Awaited<ReturnType<typeof init>>
+let wasm: Awaited<ReturnType<typeof init>> | undefined
 
 async function initWasmIfNeeded() {
   if (!wasm) {
