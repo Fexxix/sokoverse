@@ -27,3 +27,9 @@ export const ENDLESS_PRESET_CONFIG = {
 
 export type EndlessPresetConfig =
   (typeof ENDLESS_PRESET_CONFIG)[keyof typeof ENDLESS_PRESET_CONFIG]
+export type EndlessPreset = keyof typeof ENDLESS_PRESET_CONFIG
+
+export type EndlessSettings = {
+  preset: EndlessPreset
+  pushRestriction: boolean
+}

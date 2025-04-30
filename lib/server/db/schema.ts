@@ -4,10 +4,12 @@ import {
   integer,
   timestamp,
   boolean,
-  jsonb,
   uuid,
+  pgEnum,
+  jsonb,
 } from "drizzle-orm/pg-core"
 import { relations, type InferSelectModel } from "drizzle-orm"
+import { type EndlessSettings } from "@/lib/common/constants"
 
 export const userTable = pgTable("userTable", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -15,6 +17,8 @@ export const userTable = pgTable("userTable", {
   name: text("name"),
   pictureURL: text("picture_url"),
   isAnonymous: boolean("is_anonymous").default(true),
+  endlessSettings: jsonb("endless_settings").$type<EndlessSettings>(),
+  endlessLevelCount: integer("endless_level_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
 })
 
@@ -55,14 +59,13 @@ export const expertLevels = pgTable("expert_levels", {
 export const endlessLevels = pgTable("endless_levels", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: integer("user_id").references(() => userTable.id),
-  levelData: text("level_data").array().notNull(), // Boxoban format array
-  preset: text("preset").notNull(), // 'casual', 'balanced', etc.
-  presetConfig: jsonb("preset_config").notNull(), // Store the actual config for custom presets
-  completed: boolean("completed").default(false),
+  levelData: text("level_data").array().notNull(),
+  setting: jsonb("endless_settings").$type<EndlessSettings>(),
+  isCompleted: boolean("is_completed").default(false),
   steps: integer("steps"),
   timeMs: integer("time_ms"),
   createdAt: timestamp("created_at").defaultNow(),
-  completedAt: timestamp("completed_at"),
+  completedAt: timestamp("completed_at").defaultNow(),
 })
 
 // Relations
@@ -100,3 +103,4 @@ export const endlessLevelsRelations = relations(endlessLevels, ({ one }) => ({
 
 export type User = InferSelectModel<typeof userTable>
 export type Session = InferSelectModel<typeof sessionTable>
+export type EndlessLevel = InferSelectModel<typeof endlessLevels>
