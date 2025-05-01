@@ -12,7 +12,6 @@ async function EndlessChallengePage({
 }) {
   let initialLevel: Awaited<ReturnType<typeof generateEndlessLevel>> | null =
     null
-  const initialLevelNumber = (session.user.endlessLevelCount ?? 1) + 1
 
   if (session.user.endlessSettings) {
     initialLevel = await generateEndlessLevel()
@@ -28,12 +27,13 @@ async function EndlessChallengePage({
           initialLevel
             ? {
                 level: initialLevel.level,
-                levelNumber: initialLevelNumber,
+                levelNumber: initialLevel.levelNumber,
                 id: initialLevel.id!,
               }
             : null
         }
         firstVisit={firstVisit}
+        showRecordsLink={true}
       />
     </div>
   )

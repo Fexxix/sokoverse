@@ -25,6 +25,9 @@ export const ENDLESS_PRESET_CONFIG = {
   },
 } as const
 
+export const PAGE_SIZE = 10
+export const MIN_TIME_PER_MOVE = 100
+
 export type EndlessPresetConfig =
   (typeof ENDLESS_PRESET_CONFIG)[keyof typeof ENDLESS_PRESET_CONFIG]
 export type EndlessPreset = keyof typeof ENDLESS_PRESET_CONFIG

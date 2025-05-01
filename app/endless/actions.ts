@@ -1,16 +1,18 @@
 "use server"
 
-import { ENDLESS_PRESET_CONFIG, EndlessSettings } from "@/lib/common/constants"
+import {
+  ENDLESS_PRESET_CONFIG,
+  EndlessSettings,
+  MIN_TIME_PER_MOVE,
+} from "@/lib/common/constants"
 import { generateSokobanLevelServerSide } from "@/lib/level-generator"
 import { getCurrentSession } from "@/lib/server/auth/session"
 import { signPayload } from "@/lib/server/auth/sign"
 import { withSessionValidated } from "@/lib/server/auth/with-session-validated"
 import { db } from "@/lib/server/db"
 import { endlessLevels, userTable } from "@/lib/server/db/schema"
-import { and, eq } from "drizzle-orm"
+import { and, eq, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
-
-const MIN_TIME_PER_MOVE = 100
 
 export const generateEndlessLevel = withSessionValidated(
   async (
@@ -39,7 +41,11 @@ export const generateEndlessLevel = withSessionValidated(
 
     // if so, return that level
     if (existingLevel.length > 0 && !discardCurrentAndGenerateAnother) {
-      return { level: existingLevel[0].levelData, id: existingLevel[0].id }
+      return {
+        level: existingLevel[0].levelData,
+        id: existingLevel[0].id,
+        levelNumber: existingLevel[0].levelNumber,
+      }
     }
 
     if (!existingLevel.length && discardCurrentAndGenerateAnother) {
@@ -73,21 +79,26 @@ export const generateEndlessLevel = withSessionValidated(
 
       return {
         level,
-        levelNumber: (user.endlessLevelCount ?? 0) + 1,
+        levelNumber: existingLevel[0].levelNumber,
         id: existingLevel[0].id,
       }
     }
 
-    const [{ level, id }] = await db
+    const [{ level, id, levelNumber }] = await db
       .insert(endlessLevels)
       .values({
         userId: user.id,
         setting: user.endlessSettings,
         levelData: data.level,
+        levelNumber: (user.endlessLevelCount ?? 0) + 1,
       })
-      .returning({ level: endlessLevels.levelData, id: endlessLevels.id })
+      .returning({
+        level: endlessLevels.levelData,
+        id: endlessLevels.id,
+        levelNumber: endlessLevels.levelNumber,
+      })
 
-    return { level, id, levelNumber: (user.endlessLevelCount ?? 0) + 1 }
+    return { level, id, levelNumber }
   }
 )
 
@@ -205,6 +216,7 @@ export const submitLevel = withSessionValidated(
           isCompleted: true,
           steps: stats.steps,
           timeMs: stats.time,
+          completedAt: new Date(),
         })
         .where(eq(endlessLevels.id, currentLevel.id)),
       db

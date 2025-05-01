@@ -60,6 +60,7 @@ export const endlessLevels = pgTable("endless_levels", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: integer("user_id").references(() => userTable.id),
   levelData: text("level_data").array().notNull(),
+  levelNumber: integer("level_number").unique().notNull(),
   setting: jsonb("endless_settings").$type<EndlessSettings>(),
   isCompleted: boolean("is_completed").default(false),
   steps: integer("steps"),

@@ -18,7 +18,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Info } from "lucide-react"
+import { Info, ListFilter } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import SokobanCanvasGameBoard, {
   type AnimationFrame,
@@ -47,10 +48,12 @@ export default function SokobanGame({
   endlessSettings,
   initialLevel,
   firstVisit,
+  showRecordsLink = false,
 }: {
   endlessSettings: EndlessSettings | null
   initialLevel: { level: string[]; levelNumber: number; id: string } | null
   firstVisit: boolean
+  showRecordsLink?: boolean
 }) {
   const [gameState, setGameState] = useState<GameState | null>(
     initialLevel ? initializeGameState(initialLevel.level) : null
@@ -86,7 +89,7 @@ export default function SokobanGame({
     onSuccess: (data) => {
       if (data && data.level) {
         setGameState(initializeGameState(data.level))
-        setLevelNumber((data.levelNumber ?? 1) + 1)
+        setLevelNumber(data.levelNumber ?? 1)
         setLevelId(data.id ?? "")
       }
     },
@@ -424,6 +427,20 @@ export default function SokobanGame({
         isLoading={isLoading}
       >
         {settingsDialog}
+
+        {showRecordsLink && (
+          <Button
+            asChild
+            variant="outline"
+            size="icon"
+            className="pixelated-border"
+            aria-label="View records"
+          >
+            <Link href="/endless/records">
+              <ListFilter className="h-5 w-5" />
+            </Link>
+          </Button>
+        )}
 
         <Dialog>
           <DialogTrigger asChild>
