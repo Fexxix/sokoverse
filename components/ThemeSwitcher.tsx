@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { Settings } from "lucide-react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
@@ -33,7 +37,10 @@ const ThemeSwitcher = () => {
           <Settings className="h-5 w-5" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 font-mono" align="end">
+      <PopoverContent
+        className="w-56 font-mono [font-size:1rem_!important]"
+        align="end"
+      >
         <div className="space-y-2">
           <h4 className="font-pixel text-sm">Color Theme</h4>
           <div className="grid grid-cols-1 gap-2">
@@ -54,7 +61,9 @@ const ThemeSwitcher = () => {
                 <div
                   className={`mr-2 h-3 w-3 rounded-full ${t.color}`}
                   style={{
-                    boxShadow: `0 0 8px ${t.color.replace("bg-", "").replace("-500", "")}`,
+                    boxShadow: `0 0 8px ${t.color
+                      .replace("bg-", "")
+                      .replace("-500", "")}`,
                   }}
                 />
                 {t.name}
@@ -68,4 +77,3 @@ const ThemeSwitcher = () => {
 }
 
 export default ThemeSwitcher
-

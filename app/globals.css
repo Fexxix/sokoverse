@@ -147,6 +147,7 @@
 
 .font-mono {
   font-family: var(--font-vt323);
+  font-size: larger;
 }
 
 /* Pixelated border effect */
