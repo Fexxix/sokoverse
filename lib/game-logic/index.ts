@@ -5,6 +5,9 @@ export interface Position {
   y: number
 }
 
+export type LURDMove = "l" | "u" | "r" | "d"
+export type Direction = "up" | "down" | "left" | "right"
+
 export interface GameState {
   grid: string[][]
   playerPos: Position
@@ -13,8 +16,9 @@ export interface GameState {
   startTime: number | null
   elapsedTime: number
   isCompleted: boolean
-  movementDirection: "up" | "down" | "left" | "right" | null
+  movementDirection: Direction | null
   isMoving: boolean
+  moves: LURDMove[] // Add moves array to track movement history
 }
 
 export interface GameStats {
@@ -41,6 +45,7 @@ export function initializeGameState(level: string[]): GameState {
     isCompleted: false,
     movementDirection: null,
     isMoving: false,
+    moves: [], // Initialize with empty array
   }
 }
 
@@ -140,19 +145,24 @@ export function movePlayer(
 
   let dx = 0
   let dy = 0
+  let moveChar: LURDMove = "r" // Default value (doesn't really matter)
 
   switch (direction) {
     case "up":
       dy = -1
+      moveChar = "u"
       break
     case "down":
       dy = 1
+      moveChar = "d"
       break
     case "left":
       dx = -1
+      moveChar = "l"
       break
     case "right":
       dx = 1
+      moveChar = "r"
       break
   }
 
@@ -161,7 +171,6 @@ export function movePlayer(
     return {
       ...state,
       movementDirection: direction,
-      isMoving: false,
     }
   }
 
@@ -196,6 +205,9 @@ export function movePlayer(
   // Check if the level is completed
   const isCompleted = checkLevelCompleted(newGrid)
 
+  // Add the move to the moves array
+  const newMoves = [...state.moves, moveChar]
+
   return {
     ...state,
     grid: newGrid,
@@ -204,8 +216,8 @@ export function movePlayer(
     steps: state.steps + 1,
     isCompleted,
     movementDirection: direction,
-    isMoving: true,
     elapsedTime: state.startTime ? Date.now() - state.startTime : 0,
+    moves: newMoves, // Add the new move to the array
   }
 }
 
