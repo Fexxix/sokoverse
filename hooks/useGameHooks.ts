@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
 import { movePlayer, type GameState, type Direction } from "@/lib/game-logic"
 import type { AnimationFrame } from "@/components/game/SokobanCanvasGameBoard"
 
@@ -87,8 +87,8 @@ export function useKeyboardControls({
 
       // Start animation
       setAnimationFrame((animationFrame) => ({
-        current: animationFrame.prev === 1 ? 2 : 1,
-        prev: animationFrame.current,
+        which:
+          animationFrame.which === 0 ? 1 : animationFrame.which === 1 ? 2 : 1,
         type: "inbetween",
       }))
 

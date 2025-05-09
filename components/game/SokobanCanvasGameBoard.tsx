@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { spriteMap, type SpriteThemesKeyType } from "@/lib/utils"
 import { useTheme } from "next-themes"
-import { type GameState, type Direction } from "@/lib/game-logic"
+import { type GameState } from "@/lib/game-logic"
 import { useKeyboardControls } from "@/hooks/useGameHooks"
 
 const TILE_SIZE = 48
@@ -16,8 +16,7 @@ const GOAL_SIZE = 20
 const BORDER_COLOR = "#f75040"
 
 export type AnimationFrame = {
-  current: 1 | 2 // 1 and 2 are inbetween frames
-  prev: 1 | 2
+  which: 0 | 1 | 2 // 1 and 2 are inbetween frames, 0 means initial state
   type: "default" | "inbetween"
 }
 
@@ -42,8 +41,7 @@ export default function SokobanCanvasGameBoard({
   const grid = gameState?.grid || []
   const movementDirection = gameState?.movementDirection || null
   const [animationFrame, setAnimationFrame] = useState<AnimationFrame>({
-    current: 1,
-    prev: 1,
+    which: 0,
     type: "default",
   })
 
@@ -286,7 +284,7 @@ function getSprite(
       switch (movementDirection) {
         case "up":
           if (animationFrame.type === "inbetween") {
-            return animationFrame.current === 1
+            return animationFrame.which === 1 || animationFrame.which === 0
               ? spriteMap.themes[theme].playerUpInbetween1
               : spriteMap.themes[theme].playerUpInbetween2
           } else {
@@ -294,7 +292,7 @@ function getSprite(
           }
         case "down":
           if (animationFrame.type === "inbetween") {
-            return animationFrame.current === 1
+            return animationFrame.which === 1 || animationFrame.which === 0
               ? spriteMap.themes[theme].playerDownInbetween1
               : spriteMap.themes[theme].playerDownInbetween2
           } else {
@@ -302,7 +300,7 @@ function getSprite(
           }
         case "left":
           if (animationFrame.type === "inbetween") {
-            return animationFrame.current === 1
+            return animationFrame.which === 1 || animationFrame.which === 0
               ? spriteMap.themes[theme].playerLeftInbetween1
               : spriteMap.themes[theme].playerLeftInbetween2
           } else {
@@ -310,7 +308,7 @@ function getSprite(
           }
         default:
           if (animationFrame.type === "inbetween") {
-            return animationFrame.current === 1
+            return animationFrame.which === 1 || animationFrame.which === 0
               ? spriteMap.themes[theme].playerRightInbetween1
               : spriteMap.themes[theme].playerRightInbetween2
           } else {
