@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useMutation } from "@tanstack/react-query"
 import {
   initializeGameState,
@@ -22,7 +22,7 @@ import { Info, ListFilter } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import SokobanCanvasGameBoard, {
-  type AnimationFrame,
+  AnimationFrame,
 } from "./SokobanCanvasGameBoard"
 import { SettingsDialog } from "./SettingsDialog"
 import { LevelCompletionDialog } from "./LevelCompletionDialog"
@@ -41,8 +41,11 @@ import {
 } from "@/app/endless/actions"
 import { hmacSign } from "@/lib/client/wasm/hmac"
 import { useAuth } from "@/contexts/auth"
-
-type LURDMove = "l" | "u" | "r" | "d"
+import {
+  useKeyboardControls,
+  useGameTimer,
+  useGameCompletion,
+} from "@/hooks/useGameHooks"
 
 export default function SokobanGame({
   endlessSettings,
@@ -58,22 +61,18 @@ export default function SokobanGame({
   const [gameState, setGameState] = useState<GameState | null>(
     initialLevel ? initializeGameState(initialLevel.level) : null
   )
-  const [keyHandled, setKeyHandled] = useState(false)
-  const [animationFrame, setAnimationFrame] = useState<AnimationFrame>({
-    current: 1,
-    prev: 1,
-    type: "default",
-  })
   const [levelNumber, setLevelNumber] = useState<number>(
     initialLevel?.levelNumber ?? 1
   )
   const [levelId, setLevelId] = useState(initialLevel?.id ?? "")
   const [showSettingsDialog, setShowSettingsDialog] = useState(false)
   const [showCompletionDialog, setShowCompletionDialog] = useState(false)
-  const [moves, setMoves] = useState<LURDMove[]>([])
   const [isReplay, setIsReplay] = useState(false)
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
-  const animationTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const [animationFrame, setAnimationFrame] = useState<AnimationFrame>({
+    current: 1,
+    prev: 1,
+    type: "default",
+  })
   const { toast } = useToast()
   const { user } = useAuth()
 
@@ -104,14 +103,8 @@ export default function SokobanGame({
   })
 
   const submitLevelMutation = useMutation({
-    mutationFn: async ({
-      stats,
-      moves,
-    }: {
-      stats: GameStatsType
-      moves: LURDMove[]
-    }) => {
-      const strMoves = moves.join("")
+    mutationFn: async ({ stats }: { stats: GameStatsType }) => {
+      const strMoves = gameState?.moves.join("") ?? ""
       //userId:currentLevelNumber:steps:time:moves
       const payload = `${user?.id}:${levelNumber}:${stats.steps}:${stats.time}:${strMoves}`
       const hash = await hmacSign(payload)
@@ -133,14 +126,12 @@ export default function SokobanGame({
   const updateLevelMutation = useMutation({
     mutationFn: async ({
       stats,
-      moves,
       levelId,
     }: {
       stats: GameStatsType
-      moves: LURDMove[]
       levelId: string
     }) => {
-      const strMoves = moves.join("")
+      const strMoves = gameState?.moves.join("") ?? ""
       //userId:levelId:currentLevelNumber:steps:time:moves
       const payload = `${user?.id}:${levelId}:${levelNumber}:${stats.steps}:${stats.time}:${strMoves}`
       const hash = await hmacSign(payload)
@@ -161,135 +152,14 @@ export default function SokobanGame({
     },
   })
 
-  // Check for level completion
-  useEffect(() => {
-    if (gameState?.isCompleted && !showCompletionDialog) {
-      // Small delay to allow the player to see the completed level
-      const timer = setTimeout(() => {
-        if (!isReplay) submitLevelMutation.mutate({ stats, moves })
-        setShowCompletionDialog(true)
-      }, 500)
-
-      return () => clearTimeout(timer)
-    }
-  }, [gameState?.isCompleted, showCompletionDialog, isReplay])
-
-  // Function to handle keyboard input
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      // Prevent default behavior for arrow keys to avoid scrolling
-      if (
-        [
-          "ArrowUp",
-          "ArrowDown",
-          "ArrowLeft",
-          "ArrowRight",
-          "w",
-          "a",
-          "s",
-          "d",
-        ].includes(e.key)
-      ) {
-        e.preventDefault()
-      }
-
-      if (!gameState || showCompletionDialog || keyHandled) return
-
-      if (gameState.isCompleted) return
-
-      let direction: "up" | "down" | "left" | "right" | null = null
-
-      switch (e.key) {
-        case "ArrowUp":
-        case "w":
-        case "W":
-          direction = "up"
-          break
-        case "ArrowDown":
-        case "s":
-        case "S":
-          direction = "down"
-          break
-        case "ArrowLeft":
-        case "a":
-        case "A":
-          direction = "left"
-          break
-        case "ArrowRight":
-        case "d":
-        case "D":
-          direction = "right"
-          break
-        case "r":
-        case "R":
-          // Reset the level
-          return resetCurrentLevel()
-        case "n":
-        case "N":
-          // Generate a new level
-          generateNewLevel()
-          return
-      }
-
-      if (direction) {
-        setKeyHandled(true)
-        setGameState((prevState) =>
-          prevState ? movePlayer(prevState, direction!) : null
-        )
-        setMoves((prevMoves) => [
-          ...prevMoves,
-          (() => {
-            switch (direction) {
-              case "up":
-                return "u"
-              case "down":
-                return "d"
-              case "left":
-                return "l"
-              case "right":
-                return "r"
-            }
-          })(),
-        ])
-
-        // Start animation
-        setAnimationFrame((animationFrame) => ({
-          current: animationFrame.prev === 1 ? 2 : 1,
-          prev: animationFrame.current,
-          type: "inbetween",
-        }))
-
-        // Clear any existing animation timer
-        if (animationTimerRef.current) {
-          clearTimeout(animationTimerRef.current)
-        }
-
-        // Reset animation after a short delay
-        animationTimerRef.current = setTimeout(() => {
-          setAnimationFrame((animationFrame) => ({
-            ...animationFrame,
-            type: "default",
-          }))
-        }, 100)
-      }
-    },
-    [gameState, showCompletionDialog, keyHandled]
-  )
-
-  const handleKeyUp = useCallback(() => {
-    setKeyHandled(false)
-  }, [])
-
   // Generate a new level
   const generateNewLevel = useCallback(() => {
     setGameState(null)
-    setMoves([])
     generateLevelMutation.mutate({})
   }, [generateLevelMutation])
 
   const generateNewLevelAndDiscardCurrent = useCallback(() => {
     setGameState(null)
-    setMoves([])
     generateLevelMutation.mutate({ discardCurrentAndGenerateAnother: true })
   }, [generateLevelMutation])
 
@@ -302,7 +172,6 @@ export default function SokobanGame({
       setGameState(
         resetLevel(generateLevelMutation.data?.level ?? initialLevel!.level)
       )
-      setMoves([])
     }
   }, [generateLevelMutation.data?.level, initialLevel])
 
@@ -320,44 +189,39 @@ export default function SokobanGame({
     resetCurrentLevel()
   }, [resetCurrentLevel])
 
-  // Update the timer every millisecond
-  useEffect(() => {
-    if (gameState?.startTime && !gameState.isCompleted) {
-      timerRef.current = setInterval(() => {
-        setGameState((prevState) => {
-          if (!prevState) return null
-          return {
-            ...prevState,
-            elapsedTime: Date.now() - (prevState.startTime || 0),
-          }
-        })
-      }, 1)
-    }
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current)
-      }
-    }
-  }, [gameState?.startTime, gameState?.isCompleted])
-
-  // Add keyboard event listener
-  useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown)
-    window.addEventListener("keyup", handleKeyUp)
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown)
-      window.removeEventListener("keyup", handleKeyUp)
-    }
-  }, [handleKeyDown, handleKeyUp])
-
   // Get game stats
   const stats = gameState ? getGameStats(gameState) : { steps: 0, time: 0 }
 
+  // Handle level completion
+  const handleLevelComplete = useCallback(() => {
+    if (!isReplay) submitLevelMutation.mutate({ stats })
+  }, [isReplay, submitLevelMutation, stats])
+
+  // Custom hooks
+  useKeyboardControls({
+    gameState,
+    setGameState,
+    showCompletionDialog,
+    setAnimationFrame,
+    onReset: resetCurrentLevel,
+    onNewLevel: generateNewLevel,
+  })
+
+  useGameTimer({
+    gameState,
+    setGameState,
+  })
+
+  useGameCompletion({
+    gameState,
+    showCompletionDialog,
+    setShowCompletionDialog,
+    onLevelComplete: handleLevelComplete,
+  })
+
   const handleUpdateLevel = useCallback(() => {
-    updateLevelMutation.mutate({ stats, moves, levelId })
-  }, [stats, moves, levelId])
+    updateLevelMutation.mutate({ stats, levelId })
+  }, [stats, levelId, updateLevelMutation])
 
   // Loading state
   const isLoading = generateLevelMutation.isPending
@@ -396,7 +260,7 @@ export default function SokobanGame({
           ? submitLevelMutation.error.message
           : "An unknown error occurred"
       }
-      onRetry={() => submitLevelMutation.mutate({ stats, moves })}
+      onRetry={() => submitLevelMutation.mutate({ stats })}
     />
   ) : null
 
@@ -442,6 +306,7 @@ export default function SokobanGame({
           </Button>
         )}
 
+        {/* Game info dialog */}
         <Dialog>
           <DialogTrigger asChild>
             <Button

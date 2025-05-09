@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react"
 import { spriteMap, type SpriteThemesKeyType } from "@/lib/utils"
 import { useTheme } from "next-themes"
+import { type Direction } from "@/lib/game-logic"
 
 const TILE_SIZE = 48
 const CANVAS_PADDING = 20
@@ -21,7 +22,7 @@ export type AnimationFrame = {
 
 interface SokobanCanvasGameBoardProps {
   grid: string[][]
-  movementDirection: "up" | "down" | "left" | "right" | null
+  movementDirection: Direction | null
   animationFrame: AnimationFrame
 }
 

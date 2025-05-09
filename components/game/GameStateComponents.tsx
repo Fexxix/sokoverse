@@ -15,7 +15,7 @@ export function LoadingState({
 }: LoadingStateProps) {
   return (
     <div className="flex flex-col items-center">
-      <div className="flex justify-center items-center h-64">
+      <div className="flex flex-col justify-center items-center gap-2 h-64">
         <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
         <p className="ml-4 font-pixel">{message}</p>
       </div>

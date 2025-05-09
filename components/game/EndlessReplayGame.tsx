@@ -31,8 +31,11 @@ import { hmacSign } from "@/lib/client/wasm/hmac"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { type EndlessSettings } from "@/lib/common/constants"
-
-type LURDMove = "l" | "u" | "r" | "d"
+import {
+  useGameCompletion,
+  useGameTimer,
+  useKeyboardControls,
+} from "@/hooks/useGameHooks"
 
 interface EndlessReplayGameProps {
   level: {
@@ -57,179 +60,14 @@ export default function EndlessReplayGame({ level }: EndlessReplayGameProps) {
     type: "default",
   })
   const [showCompletionDialog, setShowCompletionDialog] = useState(false)
-  const [moves, setMoves] = useState<LURDMove[]>([])
   const timerRef = useRef<NodeJS.Timeout | null>(null)
-  const animationTimerRef = useRef<NodeJS.Timeout | null>(null)
   const { toast } = useToast()
   const { user } = useAuth()
-
-  // Function to handle keyboard input
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      // Prevent default behavior for arrow keys to avoid scrolling
-      if (
-        [
-          "ArrowUp",
-          "ArrowDown",
-          "ArrowLeft",
-          "ArrowRight",
-          "w",
-          "a",
-          "s",
-          "d",
-        ].includes(e.key)
-      ) {
-        e.preventDefault()
-      }
-
-      if (!gameState || showCompletionDialog || keyHandled) return
-
-      if (gameState.isCompleted) return
-
-      let direction: "up" | "down" | "left" | "right" | null = null
-
-      switch (e.key) {
-        case "ArrowUp":
-        case "w":
-        case "W":
-          direction = "up"
-          break
-        case "ArrowDown":
-        case "s":
-        case "S":
-          direction = "down"
-          break
-        case "ArrowLeft":
-        case "a":
-        case "A":
-          direction = "left"
-          break
-        case "ArrowRight":
-        case "d":
-        case "D":
-          direction = "right"
-          break
-        case "r":
-        case "R":
-          // Reset the level
-          return resetCurrentLevel()
-      }
-
-      if (direction) {
-        setKeyHandled(true)
-        setGameState((prevState) =>
-          prevState ? movePlayer(prevState, direction!) : null
-        )
-        setMoves((prevMoves) => [
-          ...prevMoves,
-          (() => {
-            switch (direction) {
-              case "up":
-                return "u"
-              case "down":
-                return "d"
-              case "left":
-                return "l"
-              case "right":
-                return "r"
-            }
-          })(),
-        ])
-
-        // Start animation
-        setAnimationFrame((animationFrame) => ({
-          current: animationFrame.prev === 1 ? 2 : 1,
-          prev: animationFrame.current,
-          type: "inbetween",
-        }))
-
-        // Clear any existing animation timer
-        if (animationTimerRef.current) {
-          clearTimeout(animationTimerRef.current)
-        }
-
-        // Reset animation after a short delay
-        animationTimerRef.current = setTimeout(() => {
-          setAnimationFrame((animationFrame) => ({
-            ...animationFrame,
-            type: "default",
-          }))
-        }, 100)
-      }
-    },
-    [gameState, showCompletionDialog, keyHandled]
-  )
-
-  const handleKeyUp = useCallback(() => {
-    setKeyHandled(false)
-  }, [])
-
-  // Reset current level
-  const resetCurrentLevel = useCallback(() => {
-    if (level) {
-      setGameState(resetLevel(level.level))
-      setMoves([])
-    }
-  }, [level])
-
-  // Check for level completion
-  useEffect(() => {
-    if (gameState?.isCompleted && !showCompletionDialog) {
-      // Small delay to allow the player to see the completed level
-      const timer = setTimeout(() => {
-        setShowCompletionDialog(true)
-      }, 500)
-
-      return () => clearTimeout(timer)
-    }
-  }, [gameState?.isCompleted, showCompletionDialog])
-
-  // Update the timer every millisecond
-  useEffect(() => {
-    if (gameState?.startTime && !gameState.isCompleted) {
-      timerRef.current = setInterval(() => {
-        setGameState((prevState) => {
-          if (!prevState) return null
-          return {
-            ...prevState,
-            elapsedTime: Date.now() - (prevState.startTime || 0),
-          }
-        })
-      }, 1)
-    }
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current)
-      }
-    }
-  }, [gameState?.startTime, gameState?.isCompleted])
-
-  // Add keyboard event listener
-  useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown)
-    window.addEventListener("keyup", handleKeyUp)
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown)
-      window.removeEventListener("keyup", handleKeyUp)
-    }
-  }, [handleKeyDown, handleKeyUp])
-
-  // Get game stats
-  const stats = gameState ? getGameStats(gameState) : { steps: 0, time: 0 }
-
-  // Handle replaying the current level
-  const handleReplayLevel = useCallback(() => {
-    setShowCompletionDialog(false)
-    resetCurrentLevel()
-    updateLevelMutation.reset()
-  }, [resetCurrentLevel])
 
   // Update level mutation
   const updateLevelMutation = useMutation({
     mutationFn: async () => {
-      const strMoves = moves.join("")
+      const strMoves = gameState?.moves.join("") ?? ""
       //userId:levelId:steps:time:moves
       const payload = `${user?.id}:${level.id}:${stats.steps}:${stats.time}:${strMoves}`
       const hash = await hmacSign(payload)
@@ -249,9 +87,38 @@ export default function EndlessReplayGame({ level }: EndlessReplayGameProps) {
     },
   })
 
-  const handleUpdateLevel = useCallback(() => {
-    updateLevelMutation.mutate()
-  }, [updateLevelMutation])
+  // Reset current level
+  const resetCurrentLevel = () => {
+    setGameState(resetLevel(level.level))
+  }
+
+  useKeyboardControls({
+    gameState,
+    setGameState,
+    showCompletionDialog,
+    setAnimationFrame,
+    onReset: resetCurrentLevel,
+  })
+
+  useGameCompletion({
+    gameState,
+    showCompletionDialog,
+    setShowCompletionDialog,
+  })
+
+  useGameTimer({
+    gameState,
+    setGameState,
+  })
+  // Get game stats
+  const stats = gameState ? getGameStats(gameState) : { steps: 0, time: 0 }
+
+  // Handle replaying the current level
+  const handleReplayLevel = () => {
+    setShowCompletionDialog(false)
+    resetCurrentLevel()
+    updateLevelMutation.reset()
+  }
 
   // Error state
   const updatingLevelErrorComponent = updateLevelMutation.isError ? (
@@ -261,7 +128,7 @@ export default function EndlessReplayGame({ level }: EndlessReplayGameProps) {
           ? updateLevelMutation.error.message
           : "An unknown error occurred"
       }
-      onRetry={handleUpdateLevel}
+      onRetry={updateLevelMutation.mutate}
     />
   ) : null
 
@@ -377,7 +244,7 @@ export default function EndlessReplayGame({ level }: EndlessReplayGameProps) {
           steps: stats.steps,
           time: formatTime(stats.time),
         }}
-        updateLevel={handleUpdateLevel}
+        updateLevel={updateLevelMutation.mutate}
         updatingLevel={updateLevelMutation.isPending}
         updatingLevelErrorComponent={updatingLevelErrorComponent}
         updatingLevelSucess={updateLevelMutation.isSuccess}
