@@ -19,9 +19,7 @@ import {
 } from "@/components/ui/dialog"
 import { Info, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import SokobanCanvasGameBoard, {
-  type AnimationFrame,
-} from "./SokobanCanvasGameBoard"
+import SokobanCanvasGameBoard from "./SokobanCanvasGameBoard"
 import { ReplayLevelCompletionDialog } from "./ReplayLevelCompletionDialog"
 import { useToast } from "@/hooks/use-toast"
 import { LoadingState, ErrorState } from "./GameStateComponents"
@@ -54,11 +52,6 @@ export default function EndlessReplayGame({ level }: EndlessReplayGameProps) {
     level ? initializeGameState(level.level) : null
   )
   const [keyHandled, setKeyHandled] = useState(false)
-  const [animationFrame, setAnimationFrame] = useState<AnimationFrame>({
-    current: 1,
-    prev: 1,
-    type: "default",
-  })
   const [showCompletionDialog, setShowCompletionDialog] = useState(false)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const { toast } = useToast()
@@ -91,14 +84,6 @@ export default function EndlessReplayGame({ level }: EndlessReplayGameProps) {
   const resetCurrentLevel = () => {
     setGameState(resetLevel(level.level))
   }
-
-  useKeyboardControls({
-    gameState,
-    setGameState,
-    showCompletionDialog,
-    setAnimationFrame,
-    onReset: resetCurrentLevel,
-  })
 
   useGameCompletion({
     gameState,
@@ -227,9 +212,9 @@ export default function EndlessReplayGame({ level }: EndlessReplayGameProps) {
       <div className="bg-background/80 p-4 rounded-lg">
         {gameState ? (
           <SokobanCanvasGameBoard
-            grid={gameState.grid}
-            movementDirection={gameState.movementDirection}
-            animationFrame={animationFrame}
+            gameState={gameState}
+            onReset={resetCurrentLevel}
+            setGameState={setGameState}
           />
         ) : (
           <LoadingState message="Loading level..." />

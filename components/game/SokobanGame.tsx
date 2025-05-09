@@ -68,11 +68,6 @@ export default function SokobanGame({
   const [showSettingsDialog, setShowSettingsDialog] = useState(false)
   const [showCompletionDialog, setShowCompletionDialog] = useState(false)
   const [isReplay, setIsReplay] = useState(false)
-  const [animationFrame, setAnimationFrame] = useState<AnimationFrame>({
-    current: 1,
-    prev: 1,
-    type: "default",
-  })
   const { toast } = useToast()
   const { user } = useAuth()
 
@@ -196,16 +191,6 @@ export default function SokobanGame({
   const handleLevelComplete = useCallback(() => {
     if (!isReplay) submitLevelMutation.mutate({ stats })
   }, [isReplay, submitLevelMutation, stats])
-
-  // Custom hooks
-  useKeyboardControls({
-    gameState,
-    setGameState,
-    showCompletionDialog,
-    setAnimationFrame,
-    onReset: resetCurrentLevel,
-    onNewLevel: generateNewLevel,
-  })
 
   useGameTimer({
     gameState,
@@ -368,9 +353,10 @@ export default function SokobanGame({
       <div className="bg-background/80 p-4 rounded-lg">
         {gameState ? (
           <SokobanCanvasGameBoard
-            grid={gameState.grid}
-            movementDirection={gameState.movementDirection}
-            animationFrame={animationFrame}
+            gameState={gameState}
+            onReset={resetCurrentLevel}
+            setGameState={setGameState}
+            onNewLevel={generateNewLevelAndDiscardCurrent}
           />
         ) : (
           <LoadingState

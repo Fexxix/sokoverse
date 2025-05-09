@@ -8,7 +8,6 @@ interface UseKeyboardControlsParams {
   gameState: GameState | null
   setGameState: React.Dispatch<React.SetStateAction<GameState | null>>
   setAnimationFrame: React.Dispatch<React.SetStateAction<AnimationFrame>>
-  showCompletionDialog: boolean
   onReset: () => void
   onNewLevel?: () => void
 }
@@ -19,7 +18,6 @@ interface UseKeyboardControlsParams {
 export function useKeyboardControls({
   gameState,
   setGameState,
-  showCompletionDialog,
   onReset,
   onNewLevel,
   setAnimationFrame,
@@ -44,9 +42,7 @@ export function useKeyboardControls({
       e.preventDefault()
     }
 
-    if (!gameState || showCompletionDialog || keyHandled) return
-
-    if (gameState.isCompleted) return
+    if (!gameState || gameState.isCompleted || keyHandled) return
 
     let direction: Direction | null = null
 

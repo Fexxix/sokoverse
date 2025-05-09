@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { spriteMap, type SpriteThemesKeyType } from "@/lib/utils"
 import { useTheme } from "next-themes"
-import { type Direction } from "@/lib/game-logic"
+import { type GameState, type Direction } from "@/lib/game-logic"
+import { useKeyboardControls } from "@/hooks/useGameHooks"
 
 const TILE_SIZE = 48
 const CANVAS_PADDING = 20
@@ -21,20 +22,38 @@ export type AnimationFrame = {
 }
 
 interface SokobanCanvasGameBoardProps {
-  grid: string[][]
-  movementDirection: Direction | null
-  animationFrame: AnimationFrame
+  gameState: GameState | null
+  setGameState: React.Dispatch<React.SetStateAction<GameState | null>>
+  onReset: () => void
+  onNewLevel?: () => void
 }
 
 export default function SokobanCanvasGameBoard({
-  grid,
-  movementDirection,
-  animationFrame,
+  gameState,
+  onReset,
+  setGameState,
+  onNewLevel,
 }: SokobanCanvasGameBoardProps) {
   const { theme } = useTheme()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   // Store the offset values in refs so they persist between renders
   const offsetRef = useRef({ x: 0, y: 0 })
+
+  const grid = gameState?.grid || []
+  const movementDirection = gameState?.movementDirection || null
+  const [animationFrame, setAnimationFrame] = useState<AnimationFrame>({
+    current: 1,
+    prev: 1,
+    type: "default",
+  })
+
+  useKeyboardControls({
+    gameState,
+    onReset,
+    setAnimationFrame,
+    setGameState,
+    onNewLevel,
+  })
 
   const isPlayerCell = (cell: string) => cell === "@" || cell === "+"
   const levelWidth = grid[0].length * TILE_SIZE
