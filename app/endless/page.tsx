@@ -1,4 +1,4 @@
-import SokobanGame from "@/components/game/SokobanGame"
+import EndlessGame from "./(components)/EndlessGame"
 import { generateEndlessLevel } from "./actions"
 import {
   withSessionValidatedPage,
@@ -21,7 +21,7 @@ async function EndlessChallengePage({
 
   return (
     <div className="flex flex-col">
-      <SokobanGame
+      <EndlessGame
         endlessSettings={session.user.endlessSettings}
         initialLevel={
           initialLevel

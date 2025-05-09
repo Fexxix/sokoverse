@@ -20,16 +20,16 @@ import {
 import { Info, ListFilter } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import SokobanCanvasGameBoard from "./SokobanCanvasGameBoard"
+import SokobanCanvasGameBoard from "@/components/game/SokobanCanvasGameBoard"
 import { SettingsDialog } from "./SettingsDialog"
-import { LevelCompletionDialog } from "./LevelCompletionDialog"
+import { LevelCompletionDialog } from "@/components/game/LevelCompletionDialog"
 import { useToast } from "@/hooks/use-toast"
 import {
   LoadingState,
   ErrorState,
   GameControls,
   GameStats,
-} from "./GameStateComponents"
+} from "@/components/game/GameStateComponents"
 import type { EndlessSettings } from "@/lib/common/constants"
 import {
   generateEndlessLevel,

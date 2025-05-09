@@ -1,5 +1,5 @@
 import { getEndlessLevelById } from "@/app/endless/records/actions"
-import EndlessReplayGame from "@/components/game/EndlessReplayGame"
+import EndlessReplayGame from "./EndlessReplayGame"
 import {
   withSessionValidatedPage,
   type ValidatedSession,
