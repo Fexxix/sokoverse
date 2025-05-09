@@ -1,10 +1,9 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState } from "react"
 import { useMutation } from "@tanstack/react-query"
 import {
   initializeGameState,
-  movePlayer,
   resetLevel,
   getGameStats,
   formatTime,
@@ -29,11 +28,7 @@ import { hmacSign } from "@/lib/client/wasm/hmac"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { type EndlessSettings } from "@/lib/common/constants"
-import {
-  useGameCompletion,
-  useGameTimer,
-  useKeyboardControls,
-} from "@/hooks/useGameHooks"
+import { useGameCompletion, useGameTimer } from "@/hooks/useGameHooks"
 
 interface EndlessReplayGameProps {
   level: {
@@ -51,9 +46,7 @@ export default function EndlessReplayGame({ level }: EndlessReplayGameProps) {
   const [gameState, setGameState] = useState<GameState | null>(
     level ? initializeGameState(level.level) : null
   )
-  const [keyHandled, setKeyHandled] = useState(false)
   const [showCompletionDialog, setShowCompletionDialog] = useState(false)
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
   const { toast } = useToast()
   const { user } = useAuth()
 

@@ -1,15 +1,14 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useMutation } from "@tanstack/react-query"
 import {
   initializeGameState,
-  movePlayer,
   resetLevel,
   getGameStats,
   formatTime,
   type GameState,
-  GameStats as GameStatsType,
+  type GameStats as GameStatsType,
 } from "@/lib/game-logic"
 import {
   Dialog,
@@ -21,9 +20,7 @@ import {
 import { Info, ListFilter } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import SokobanCanvasGameBoard, {
-  AnimationFrame,
-} from "./SokobanCanvasGameBoard"
+import SokobanCanvasGameBoard from "./SokobanCanvasGameBoard"
 import { SettingsDialog } from "./SettingsDialog"
 import { LevelCompletionDialog } from "./LevelCompletionDialog"
 import { useToast } from "@/hooks/use-toast"
@@ -41,11 +38,7 @@ import {
 } from "@/app/endless/actions"
 import { hmacSign } from "@/lib/client/wasm/hmac"
 import { useAuth } from "@/contexts/auth"
-import {
-  useKeyboardControls,
-  useGameTimer,
-  useGameCompletion,
-} from "@/hooks/useGameHooks"
+import { useGameTimer, useGameCompletion } from "@/hooks/useGameHooks"
 
 export default function SokobanGame({
   endlessSettings,
@@ -148,18 +141,18 @@ export default function SokobanGame({
   })
 
   // Generate a new level
-  const generateNewLevel = useCallback(() => {
+  const generateNewLevel = () => {
     setGameState(null)
     generateLevelMutation.mutate({})
-  }, [generateLevelMutation])
+  }
 
-  const generateNewLevelAndDiscardCurrent = useCallback(() => {
+  const generateNewLevelAndDiscardCurrent = () => {
     setGameState(null)
     generateLevelMutation.mutate({ discardCurrentAndGenerateAnother: true })
-  }, [generateLevelMutation])
+  }
 
   // Reset current level
-  const resetCurrentLevel = useCallback(() => {
+  const resetCurrentLevel = () => {
     if (
       (generateLevelMutation.data && generateLevelMutation.data.level) ||
       initialLevel
@@ -168,29 +161,29 @@ export default function SokobanGame({
         resetLevel(generateLevelMutation.data?.level ?? initialLevel!.level)
       )
     }
-  }, [generateLevelMutation.data?.level, initialLevel])
+  }
 
   // Handle level completion and generate next level
-  const handleNextLevel = useCallback(() => {
+  const handleNextLevel = () => {
     setShowCompletionDialog(false)
     setIsReplay(false)
     generateNewLevel()
-  }, [generateNewLevel])
+  }
 
   // Handle replaying the current level
-  const handleReplayLevel = useCallback(() => {
+  const handleReplayLevel = () => {
     setShowCompletionDialog(false)
     setIsReplay(true)
     resetCurrentLevel()
-  }, [resetCurrentLevel])
+  }
 
   // Get game stats
   const stats = gameState ? getGameStats(gameState) : { steps: 0, time: 0 }
 
   // Handle level completion
-  const handleLevelComplete = useCallback(() => {
+  const handleLevelComplete = () => {
     if (!isReplay) submitLevelMutation.mutate({ stats })
-  }, [isReplay, submitLevelMutation, stats])
+  }
 
   useGameTimer({
     gameState,
@@ -204,9 +197,9 @@ export default function SokobanGame({
     onLevelComplete: handleLevelComplete,
   })
 
-  const handleUpdateLevel = useCallback(() => {
+  const handleUpdateLevel = () => {
     updateLevelMutation.mutate({ stats, levelId })
-  }, [stats, levelId, updateLevelMutation])
+  }
 
   // Loading state
   const isLoading = generateLevelMutation.isPending
