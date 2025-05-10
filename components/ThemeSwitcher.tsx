@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/popover"
 import { Settings } from "lucide-react"
 import { useTheme } from "next-themes"
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/client/utils"
 
 const ThemeSwitcher = () => {
   const [open, setOpen] = useState(false)

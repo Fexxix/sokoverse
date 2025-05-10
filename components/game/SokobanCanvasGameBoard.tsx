@@ -1,9 +1,9 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { spriteMap, type SpriteThemesKeyType } from "@/lib/utils"
+import { spriteMap, type SpriteThemesKeyType } from "@/lib/client/utils"
 import { useTheme } from "next-themes"
-import { type GameState } from "@/lib/game-logic"
+import { type GameState } from "@/lib/client/game-logic"
 import { useKeyboardControls } from "@/hooks/useGameHooks"
 
 const TILE_SIZE = 48

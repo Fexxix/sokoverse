@@ -5,8 +5,7 @@ import {
   EndlessSettings,
   MIN_TIME_PER_MOVE,
 } from "@/lib/common/constants"
-import { generateSokobanLevelServerSide } from "@/lib/level-generator"
-import { getCurrentSession } from "@/lib/server/auth/session"
+import { generateSokobanLevelServerSide } from "@/lib/common/level-generator"
 import { signPayload } from "@/lib/server/auth/sign"
 import { withSessionValidated } from "@/lib/server/auth/with-session-validated"
 import { db } from "@/lib/server/db"
