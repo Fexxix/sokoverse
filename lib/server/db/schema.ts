@@ -5,8 +5,8 @@ import {
   timestamp,
   boolean,
   uuid,
-  pgEnum,
   jsonb,
+  unique,
 } from "drizzle-orm/pg-core"
 import { relations, type InferSelectModel } from "drizzle-orm"
 import { type EndlessSettings } from "@/lib/common/constants"
@@ -33,20 +33,27 @@ export const sessionTable = pgTable("session", {
   }).notNull(),
 })
 
-export const expeditions = pgTable("expeditions", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: integer("user_id").references(() => userTable.id),
-  name: text("name").notNull(),
-  slug: text("slug").unique().notNull(),
-  seed: text("seed").notNull(),
-  description: text("description"),
-  createdAt: timestamp("created_at").defaultNow(),
-})
+export const spikeVaults = pgTable(
+  "spike_vaults",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: integer("user_id").references(() => userTable.id),
+    name: text("name").notNull(),
+    slug: text("slug").notNull(),
+    seed: text("seed").notNull(),
+    description: text("description"),
+    depthGoal: integer("depth_goal").notNull().default(20),
+    currentDepth: integer("current_depth").default(0),
+    status: text("status").notNull().default("in_progress"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [unique("unique_user_slug").on(table.userId, table.slug)]
+)
 
-export const expertLevels = pgTable("expert_levels", {
+export const spikeVaultLevels = pgTable("spike_vault_levels", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: integer("user_id").references(() => userTable.id),
-  expeditionId: uuid("expedition_id").references(() => expeditions.id),
+  spikeVaultId: uuid("spike_vault_id").references(() => spikeVaults.id),
   levelNumber: integer("level_number").notNull(),
   levelData: text("level_data").array().notNull(), // Boxoban format array
   completed: boolean("completed").default(false),
@@ -60,7 +67,7 @@ export const endlessLevels = pgTable("endless_levels", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: integer("user_id").references(() => userTable.id),
   levelData: text("level_data").array().notNull(),
-  levelNumber: integer("level_number").unique().notNull(),
+  levelNumber: integer("level_number").notNull(),
   setting: jsonb("endless_settings").$type<EndlessSettings>(),
   isCompleted: boolean("is_completed").default(false),
   steps: integer("steps"),
@@ -71,29 +78,32 @@ export const endlessLevels = pgTable("endless_levels", {
 
 // Relations
 export const userRelations = relations(userTable, ({ many }) => ({
-  expeditions: many(expeditions),
-  expertLevels: many(expertLevels),
+  spikeVaults: many(spikeVaults),
+  spikeVaultLevels: many(spikeVaultLevels),
   endlessLevels: many(endlessLevels),
 }))
 
-export const expeditionsRelations = relations(expeditions, ({ one, many }) => ({
+export const spikeVaultsRelations = relations(spikeVaults, ({ one, many }) => ({
   user: one(userTable, {
-    fields: [expeditions.userId],
+    fields: [spikeVaults.userId],
     references: [userTable.id],
   }),
-  levels: many(expertLevels),
+  levels: many(spikeVaultLevels),
 }))
 
-export const expertLevelsRelations = relations(expertLevels, ({ one }) => ({
-  user: one(userTable, {
-    fields: [expertLevels.userId],
-    references: [userTable.id],
-  }),
-  expedition: one(expeditions, {
-    fields: [expertLevels.expeditionId],
-    references: [expeditions.id],
-  }),
-}))
+export const spikeVaultLevelsRelations = relations(
+  spikeVaultLevels,
+  ({ one }) => ({
+    user: one(userTable, {
+      fields: [spikeVaultLevels.userId],
+      references: [userTable.id],
+    }),
+    spikeVault: one(spikeVaults, {
+      fields: [spikeVaultLevels.spikeVaultId],
+      references: [spikeVaults.id],
+    }),
+  })
+)
 
 export const endlessLevelsRelations = relations(endlessLevels, ({ one }) => ({
   user: one(userTable, {
@@ -104,4 +114,5 @@ export const endlessLevelsRelations = relations(endlessLevels, ({ one }) => ({
 
 export type User = InferSelectModel<typeof userTable>
 export type Session = InferSelectModel<typeof sessionTable>
-export type EndlessLevel = InferSelectModel<typeof endlessLevels>
+export type SpikeVault = InferSelectModel<typeof spikeVaults>
+export type SpikeVaultLevel = InferSelectModel<typeof spikeVaultLevels>

@@ -28,7 +28,7 @@ export function withSessionValidated<TArgs extends unknown[], TReturnType>(
 export function withSessionValidatedPage<TProps extends object>(
   Component: React.ComponentType<TProps & { session: ValidatedSession }>
 ) {
-  return async (props: TProps) => {
+  const Wrapper = async (props: TProps) => {
     const session = await getCurrentSession()
 
     if (!session.user || !session.session) {
@@ -37,4 +37,10 @@ export function withSessionValidatedPage<TProps extends object>(
 
     return <Component session={session} {...props} />
   }
+
+  Wrapper.displayName = `withSessionValidatedPage(${
+    Component.displayName || Component.name || "Anonymous"
+  })`
+
+  return Wrapper
 }

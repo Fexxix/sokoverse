@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Infinity, Trophy, Pencil, Lock } from "lucide-react"
+import { Infinity, Trophy, Pencil, Lock, Vault } from "lucide-react"
 import Link from "next/link"
 import AuthDialog from "./AuthDialog"
 import { useAuth } from "@/contexts/auth"
@@ -21,7 +21,7 @@ interface ModeButtonProps {
   title: string
   description: string
   readyMessage: string
-  icon: "infinity" | "trophy" | "pencil"
+  icon: "infinity" | "trophy" | "pencil" | "vault"
   href: string
   requiresAuth?: boolean
 }
@@ -48,6 +48,8 @@ const ModeButton: React.FC<ModeButtonProps> = ({
         return <Trophy className="w-8 h-8 mb-2" />
       case "pencil":
         return <Pencil className="w-8 h-8 mb-2" />
+      case "vault":
+        return <Vault className="w-8 h-8 mb-2" />
       default:
         return null
     }
@@ -75,16 +77,21 @@ const ModeButton: React.FC<ModeButtonProps> = ({
     <>
       <Button
         variant="outline"
-        className="h-auto py-6 flex flex-col items-center pixelated-border hover:bg-primary/20 transition-all duration-300"
+        className="h-auto py-6 flex flex-col items-start pixelated-border hover:bg-primary/20 transition-all duration-300 w-full bg-background/80 border-primary/50"
         onClick={() => setOpen(true)}
       >
-        <IconComponent />
-        <span className="font-pixel text-lg mb-2">
-          {title}{" "}
-          {requiresAuth && <Lock className="inline-block w-4 h-4 ml-1" />}
-        </span>
-        <span className="font-mono text-sm text-center opacity-80 font-medium leading-relaxed">
-          {description.split(" ").slice(0, 5).join(" ")}...
+        <div className="flex items-center w-full mb-3">
+          <span className="font-mono text-primary mr-2">&gt;</span>
+          <span className="font-pixel text-lg text-primary">
+            run_{title.toLowerCase().replace(/\s+/g, "_")}{" "}
+            {requiresAuth && <Lock className="inline-block w-4 h-4 ml-1" />}
+          </span>
+          <div className="ml-auto">
+            <IconComponent />
+          </div>
+        </div>
+        <span className="font-mono text-sm text-left opacity-80 font-medium leading-relaxed pl-6">
+          {description.split(" ").slice(0, 10).join(" ")}...
         </span>
       </Button>
 

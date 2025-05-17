@@ -1,7 +1,11 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { movePlayer, type GameState, type Direction } from "@/lib/game-logic"
+import {
+  movePlayer,
+  type GameState,
+  type Direction,
+} from "@/lib/client/game-logic"
 import type { AnimationFrame } from "@/components/game/SokobanCanvasGameBoard"
 
 interface UseKeyboardControlsParams {
@@ -169,7 +173,6 @@ export function useGameTimer({ gameState, setGameState }: UseGameTimerParams) {
 interface UseGameCompletionParams {
   gameState: GameState | null
   showCompletionDialog: boolean
-  setShowCompletionDialog: (value: boolean) => void
   onLevelComplete?: () => void
 }
 
@@ -179,7 +182,6 @@ interface UseGameCompletionParams {
 export function useGameCompletion({
   gameState,
   showCompletionDialog,
-  setShowCompletionDialog,
   onLevelComplete,
 }: UseGameCompletionParams) {
   // Check for level completion
@@ -188,15 +190,9 @@ export function useGameCompletion({
       // Small delay to allow the player to see the completed level
       const timer = setTimeout(() => {
         if (onLevelComplete) onLevelComplete()
-        setShowCompletionDialog(true)
       }, 500)
 
       return () => clearTimeout(timer)
     }
-  }, [
-    gameState?.isCompleted,
-    showCompletionDialog,
-    onLevelComplete,
-    setShowCompletionDialog,
-  ])
+  }, [gameState?.isCompleted, showCompletionDialog, onLevelComplete])
 }

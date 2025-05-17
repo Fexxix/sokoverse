@@ -1,13 +1,22 @@
 import ModeButton from "@/components/ModeButton"
+import { type Metadata } from "next"
 
-export default function ChallengesPage() {
+export const metadata: Metadata = {
+  title: "Sokoverse | Game Terminal",
+  description: "Select a game mode to play",
+}
+
+export default function TerminalPage() {
   return (
     <div className="min-h-[calc(100vh-200px)] flex flex-col items-center relative z-10">
       {/* Header */}
       <div className="w-full max-w-4xl text-center mb-12">
-        <h1 className="text-4xl md:text-5xl font-pixel mb-4">
-          CHOOSE YOUR CHALLENGE
+        <h1 className="text-4xl md:text-5xl font-pixel mb-4 text-primary">
+          GAME TERMINAL
         </h1>
+        <p className="font-mono text-sm text-muted-foreground">
+          &gt; Select a program to execute_
+        </p>
       </div>
 
       {/* Game Modes Section */}
@@ -22,11 +31,11 @@ export default function ChallengesPage() {
           />
 
           <ModeButton
-            title="Expert Gauntlet"
-            description="Test your skills against handcrafted brutal puzzles. Only the best will conquer them all."
-            readyMessage="These puzzles have broken many minds. Are you up for the challenge?"
-            icon="trophy"
-            href="/expert"
+            title="Spike Vaults"
+            description="Procedurally generated puzzle collections with increasing difficulty. Create vaults with custom depth goals and track your progress."
+            readyMessage="Each vault has a unique seed generating consistent puzzles. How deep can you go?"
+            icon="vault"
+            href="/spike-vaults"
           />
 
           <ModeButton

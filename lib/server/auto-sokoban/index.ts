@@ -29,10 +29,8 @@ export async function generateSpikeVaultLevel(seed: number, level: number) {
             "Accept-Encoding": "gzip, deflate",
             Connection: "keep-alive",
             Referer: `http://www.linusakesson.net/games/autosokoban/?v=1&seed=${seed}&level=${level}`,
-            Cookie: "PHPSESSID=bmr48npa0rt5j453ngvukjgfck",
           },
-          // @ts-expect-error This only errors in ci and is just a type error
-          next: { revalidate: 0 }, // Ensure fresh data
+          cache: "no-store",
         }
       )
 

@@ -19,7 +19,10 @@ const FloatingPixels: React.FC = () => {
   const pathname = usePathname()
 
   // Determine if we're on a game page
-  const isGamePage = pathname === "/endless" || pathname === "/expert"
+  const isGamePage =
+    pathname === "/endless" ||
+    pathname === "/spike-vaults" ||
+    pathname.startsWith("/spike-vaults/")
 
   useEffect(() => {
     // Set initial dimensions

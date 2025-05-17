@@ -4,7 +4,7 @@ import type React from "react"
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { RotateCcw, AlertTriangle, RefreshCw, Gamepad2 } from "lucide-react"
+import { RotateCcw, AlertTriangle, RefreshCw, Terminal } from "lucide-react"
 
 interface LoadingStateProps {
   message?: string
@@ -67,7 +67,7 @@ export function ErrorState({
             variant="outline"
             className="font-pixel pixelated-border"
           >
-            <Link href="/challenges">Return to Challenges</Link>
+            <Link href="/terminal">Return to Terminal</Link>
           </Button>
         </div>
       </div>
@@ -95,10 +95,10 @@ export function GameControls({
         variant="outline"
         size="icon"
         className="pixelated-border"
-        aria-label="Return to challenges"
+        aria-label="Return to terminal"
       >
-        <Link href="/challenges">
-          <Gamepad2 className="h-5 w-5" />
+        <Link href="/terminal">
+          <Terminal className="h-5 w-5" />
         </Link>
       </Button>
 

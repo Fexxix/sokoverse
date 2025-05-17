@@ -9,15 +9,8 @@ import {
   formatTime,
   type GameState,
   type GameStats as GameStatsType,
-} from "@/lib/game-logic"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Info, ListFilter } from "lucide-react"
+} from "@/lib/client/game-logic"
+import { ListFilter } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import SokobanCanvasGameBoard from "@/components/game/SokobanCanvasGameBoard"
@@ -39,6 +32,7 @@ import {
 import { hmacSign } from "@/lib/client/wasm/hmac"
 import { useAuth } from "@/contexts/auth"
 import { useGameTimer, useGameCompletion } from "@/hooks/useGameHooks"
+import GameInfoDialog from "@/components/game/GameInfoDialog"
 
 export default function SokobanGame({
   endlessSettings,
@@ -91,7 +85,7 @@ export default function SokobanGame({
   })
 
   const submitLevelMutation = useMutation({
-    mutationFn: async ({ stats }: { stats: GameStatsType }) => {
+    mutationFn: async () => {
       const strMoves = gameState?.moves.join("") ?? ""
       //userId:currentLevelNumber:steps:time:moves
       const payload = `${user?.id}:${levelNumber}:${stats.steps}:${stats.time}:${strMoves}`
@@ -182,7 +176,8 @@ export default function SokobanGame({
 
   // Handle level completion
   const handleLevelComplete = () => {
-    if (!isReplay) submitLevelMutation.mutate({ stats })
+    if (!isReplay) submitLevelMutation.mutate()
+    setShowCompletionDialog(true)
   }
 
   useGameTimer({
@@ -193,7 +188,6 @@ export default function SokobanGame({
   useGameCompletion({
     gameState,
     showCompletionDialog,
-    setShowCompletionDialog,
     onLevelComplete: handleLevelComplete,
   })
 
@@ -231,28 +225,6 @@ export default function SokobanGame({
     />
   )
 
-  const submittingLevelErrorComponent = submitLevelMutation.isError ? (
-    <ErrorState
-      errorMessage={
-        submitLevelMutation.error instanceof Error
-          ? submitLevelMutation.error.message
-          : "An unknown error occurred"
-      }
-      onRetry={() => submitLevelMutation.mutate({ stats })}
-    />
-  ) : null
-
-  const updatingLevelErrorComponent = updateLevelMutation.isError ? (
-    <ErrorState
-      errorMessage={
-        updateLevelMutation.error instanceof Error
-          ? updateLevelMutation.error.message
-          : "An unknown error occurred"
-      }
-      onRetry={handleUpdateLevel}
-    />
-  ) : null
-
   return (
     <div className="flex flex-col items-center">
       {/* Level title */}
@@ -284,59 +256,7 @@ export default function SokobanGame({
           </Button>
         )}
 
-        {/* Game info dialog */}
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="pixelated-border"
-              aria-label="Game information"
-            >
-              <Info className="h-5 w-5" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-background border-primary">
-            <DialogHeader>
-              <DialogTitle className="font-pixel text-primary">
-                Game Controls
-              </DialogTitle>
-            </DialogHeader>
-            <div className="font-mono text-foreground space-y-4">
-              <div>
-                <h3 className="font-bold mb-2">Movement</h3>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>
-                    <span className="font-bold">WASD</span> or{" "}
-                    <span className="font-bold">Arrow Keys</span> to move
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-bold mb-2">Game Controls</h3>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>
-                    <span className="font-bold">R</span> to restart the current
-                    level
-                  </li>
-                  <li>
-                    <span className="font-bold">N</span> to generate a new
-                    random level
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-bold mb-2">Game Rules</h3>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>Push all boxes onto the goal spots</li>
-                  <li>You can only push one box at a time</li>
-                  <li>You cannot pull boxes</li>
-                  <li>Try to solve each puzzle in as few moves as possible</li>
-                </ul>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <GameInfoDialog />
       </GameControls>
 
       {/* Game stats */}
@@ -367,19 +287,23 @@ export default function SokobanGame({
         isOpen={showCompletionDialog}
         onNextLevel={handleNextLevel}
         onReplayLevel={handleReplayLevel}
-        submittingLevelErrorComponent={submittingLevelErrorComponent}
-        stats={{
-          steps: stats.steps,
-          time: formatTime(stats.time),
-        }}
+        stats={stats}
         mode="endless"
         settingsDialog={settingsDialog}
-        submittingLevel={submitLevelMutation.isPending}
-        updateLevel={isReplay ? handleUpdateLevel : null}
-        updatingLevel={isReplay ? updateLevelMutation.isPending : null}
-        updatingLevelErrorComponent={
-          isReplay ? updatingLevelErrorComponent : null
+        submitLevelState={{
+          pending: submitLevelMutation.isPending,
+          error: submitLevelMutation.error,
+        }}
+        updateLevelState={
+          isReplay
+            ? {
+                pending: updateLevelMutation.isPending,
+                error: updateLevelMutation.error,
+              }
+            : undefined
         }
+        onUpdateLevel={isReplay ? handleUpdateLevel : null}
+        onSubmitRetry={submitLevelMutation.mutate}
       />
     </div>
   )

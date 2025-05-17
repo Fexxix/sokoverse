@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import ThemeSwitcher from "@/components/ThemeSwitcher"
 import AuthDialog from "@/components/AuthDialog"
-import { Infinity, Trophy, Pencil, Gamepad2 } from "lucide-react"
+import { Infinity, Vault, Pencil, Terminal } from "lucide-react"
 import { useAuth } from "@/contexts/auth"
 import { UserButton } from "@/components/UserButton"
 
@@ -21,23 +21,26 @@ const Navbar = () => {
 
   // Determine current game mode based on path
   const getCurrentMode = () => {
-    if (pathname === "/endless") {
+    if (pathname.startsWith("/endless")) {
       return {
         name: "Endless Challenge",
         icon: <Infinity className="h-5 w-5 mr-2" />,
       }
-    } else if (pathname === "/expert") {
+    } else if (pathname.startsWith("/spike-vaults")) {
       return {
-        name: "Expert Gauntlet",
-        icon: <Trophy className="h-5 w-5 mr-2" />,
+        name: "Spike Vaults",
+        icon: <Vault className="h-5 w-5 mr-2" />,
       }
-    } else if (pathname === "/architect") {
+    } else if (pathname.startsWith("/architect")) {
       return {
         name: "Sokoban Architect",
         icon: <Pencil className="h-5 w-5 mr-2" />,
       }
-    } else if (pathname === "/challenges") {
-      return { name: "Challenges", icon: <Gamepad2 className="h-5 w-5 mr-2" /> }
+    } else if (pathname.startsWith("/terminal")) {
+      return {
+        name: "Game Terminal",
+        icon: <Terminal className="h-5 w-5 mr-2" />,
+      }
     }
     return null
   }

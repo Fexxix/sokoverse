@@ -31,7 +31,7 @@ export default function Home() {
           asChild
           className="font-pixel text-lg px-8 py-6 pixelated-border flex items-center gap-2 hover:bg-primary/90 transition-colors"
         >
-          <Link href="/challenges">
+          <Link href="/terminal">
             START <ArrowRight className="ml-2 h-5 w-5" />
           </Link>
         </Button>

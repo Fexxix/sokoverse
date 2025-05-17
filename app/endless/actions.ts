@@ -10,7 +10,7 @@ import { signPayload } from "@/lib/server/auth/sign"
 import { withSessionValidated } from "@/lib/server/auth/with-session-validated"
 import { db } from "@/lib/server/db"
 import { endlessLevels, userTable } from "@/lib/server/db/schema"
-import { and, eq, sql } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 export const generateEndlessLevel = withSessionValidated(

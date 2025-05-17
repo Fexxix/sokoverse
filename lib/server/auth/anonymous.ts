@@ -1,7 +1,7 @@
 import { db } from "@/lib/server/db"
 import {
   endlessLevels,
-  expertLevels,
+  spikeVaultLevels,
   sessionTable,
   userTable,
 } from "@/lib/server/db/schema"
@@ -51,7 +51,7 @@ export async function cleanupAnonymousUsers() {
     const userIds = expiredUsers.map((u) => u.id)
 
     // Delete related data
-    await tx.delete(expertLevels).where(sql`user_id = ANY(${userIds})`)
+    await tx.delete(spikeVaultLevels).where(sql`user_id = ANY(${userIds})`)
     await tx.delete(endlessLevels).where(sql`user_id = ANY(${userIds})`)
     await tx.delete(sessionTable).where(sql`user_id = ANY(${userIds})`)
     await tx.delete(userTable).where(sql`id = ANY(${userIds})`)

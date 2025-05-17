@@ -8,7 +8,7 @@ import {
   getGameStats,
   formatTime,
   type GameState,
-} from "@/lib/game-logic"
+} from "@/lib/client/game-logic"
 import {
   Dialog,
   DialogContent,
@@ -81,7 +81,6 @@ export default function EndlessReplayGame({ level }: EndlessReplayGameProps) {
   useGameCompletion({
     gameState,
     showCompletionDialog,
-    setShowCompletionDialog,
   })
 
   useGameTimer({

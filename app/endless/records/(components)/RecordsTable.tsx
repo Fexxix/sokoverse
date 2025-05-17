@@ -1,6 +1,6 @@
 "use client"
 
-import { formatTime } from "@/lib/game-logic"
+import { formatTime } from "@/lib/client/game-logic"
 import { formatDistanceToNow } from "date-fns"
 import {
   Table,
@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Play, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import PresetFilter from "./PresetFilter"
-import { type EndlessSettings } from "@/lib/common/constants"
 import { useRouter } from "nextjs-toploader/app"
 import { usePathname } from "next/navigation"
 import { getEndlessRecords } from "../actions"

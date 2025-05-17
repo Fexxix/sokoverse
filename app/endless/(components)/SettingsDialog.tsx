@@ -25,7 +25,6 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import {
   ENDLESS_PRESET_CONFIG,
-  type EndlessPreset,
   type EndlessSettings,
 } from "@/lib/common/constants"
 import { saveSettings } from "@/app/endless/actions"

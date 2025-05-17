@@ -12,22 +12,22 @@ interface ProvidersProps {
   initialAuthState: AuthContextType
 }
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000, // 1 minute
+      retry: 3,
+      refetchOnWindowFocus: false,
+    },
+  },
+})
+
 export default function Providers({
   children,
   themes = ["green", "blue", "purple", "monochrome"],
   defaultTheme = "green",
   initialAuthState,
 }: ProvidersProps) {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 60 * 1000, // 1 minute
-        retry: 1,
-        refetchOnWindowFocus: false,
-      },
-    },
-  })
-
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider initialState={initialAuthState}>
