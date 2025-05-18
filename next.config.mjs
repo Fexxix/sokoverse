@@ -14,6 +14,8 @@ const nextConfig = {
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
     reactCompiler: true,
+    useCache: true,
+    dynamicIO: true,
   },
 }
 
