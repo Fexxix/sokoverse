@@ -8,13 +8,17 @@ import {
 } from "@oslojs/encoding"
 import { sha256 } from "@oslojs/crypto/sha2"
 import { cookies } from "next/headers"
-import { cache } from "react"
+import {
+  unstable_cacheLife as cacheLife,
+  unstable_cacheTag as cacheTag,
+} from "next/cache"
+import { type ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies"
 
 /**
  * Generates a random session token.
  * @returns {string} A base32 encoded random token.
  */
-export function generateSessionToken() {
+export function generateSessionToken(): string {
   const bytes = new Uint8Array(20)
   crypto.getRandomValues(bytes)
   const token = encodeBase32LowerCaseNoPadding(bytes)
@@ -132,17 +136,44 @@ export async function deleteSessionTokenCookie(): Promise<void> {
  * Retrieves the current session.
  * @returns {Promise<SessionValidationResult>} A promise that resolves to the current session.
  */
-export const getCurrentSession = cache(
-  async (): Promise<SessionValidationResult> => {
-    const cookieStore = await cookies()
-    const token = cookieStore.get("session")?.value ?? null
-    if (token === null) {
-      return { session: null, user: null }
-    }
-    const result = await validateSessionToken(token)
-    return result
+export async function getCurrentSession() {
+  const cookieStore = await cookies()
+  return getCurrentSessionCached(cookieStore.get("session")?.value ?? null)
+}
+
+/**
+ * Retrieves the current session from the cache.
+ * @param {ReadonlyRequestCookies} cookieStore - The cookie store to use.
+ * @returns {Promise<SessionValidationResult>} A promise that resolves to the current session.
+ */
+export const getCurrentSessionCached = async (
+  token: string | null
+): Promise<SessionValidationResult> => {
+  "use cache"
+
+  if (token === null) {
+    return { session: null, user: null }
   }
-)
+  const result = await validateSessionToken(token)
+
+  if (!result.session) {
+    return { session: null, user: null }
+  }
+
+  cacheTag(`session:${result.session.id}`)
+
+  const now = Date.now()
+  const expiresAt = result.session.expiresAt.getTime()
+  const remainingTime = Math.max(0, Math.floor((expiresAt - now) / 1000))
+
+  cacheLife({
+    stale: 0,
+    revalidate: remainingTime,
+    expire: remainingTime,
+  })
+
+  return result
+}
 
 export type SessionValidationResult =
   | { session: Session; user: User }

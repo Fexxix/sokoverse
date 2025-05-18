@@ -9,6 +9,7 @@ import {
 } from "@/lib/server/auth/session"
 import { redirect } from "next/navigation"
 import { createAnonymousUser } from "./anonymous"
+import { revalidateTag } from "next/cache"
 
 export async function signOut() {
   const { session } = await getCurrentSession()
@@ -19,6 +20,7 @@ export async function signOut() {
 
   await invalidateSession(session.id)
   await deleteSessionTokenCookie()
+  revalidateTag(`session:${session.id}`)
 
   // Redirect to home page
   redirect("/")

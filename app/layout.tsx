@@ -11,6 +11,8 @@ import { getCurrentSession } from "@/lib/server/auth/session"
 import NextTopLoader from "nextjs-toploader"
 import ThemeFaviconUpdater from "@/components/ThemeFaviconUpdater"
 import PreloadResources from "@/components/PreloadResources"
+import { Suspense } from "react"
+import { FullPageLoader } from "@/components/Loaders"
 
 const pressStart2P = Press_Start_2P({
   weight: "400",
@@ -37,6 +39,24 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${pressStart2P.variable} ${vt323.variable} font-sans bg-background text-foreground`}
+      >
+        <PreloadResources />
+        <NextTopLoader showSpinner={false} />
+        <Suspense fallback={<FullPageLoader />}>
+          <SessionWrapper>{children}</SessionWrapper>
+        </Suspense>
+        <SoundEffect />
+        <Toaster />
+      </body>
+    </html>
+  )
+}
+
+async function SessionWrapper({ children }: { children: React.ReactNode }) {
   const session = await getCurrentSession()
   const initialAuthState = {
     user: session?.user
@@ -49,26 +69,15 @@ export default async function RootLayout({
       : null,
     isAuthenticated: !!session?.user,
   }
-
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${pressStart2P.variable} ${vt323.variable} font-sans bg-background text-foreground`}
-      >
-        <PreloadResources />
-        <NextTopLoader showSpinner={false} />
-        <Providers initialAuthState={initialAuthState}>
-          <ThemeFaviconUpdater />
-          <PixelatedBackground />
-          <FloatingPixels />
-          <div className="grid grid-rows-[auto_1fr] min-h-screen max-w-5xl mx-auto px-4">
-            <Navbar />
-            <main className="py-8">{children}</main>
-          </div>
-          <SoundEffect />
-        </Providers>
-        <Toaster />
-      </body>
-    </html>
+    <Providers initialAuthState={initialAuthState}>
+      <ThemeFaviconUpdater />
+      <PixelatedBackground />
+      <FloatingPixels />
+      <div className="grid grid-rows-[auto_1fr] min-h-screen max-w-5xl mx-auto px-4">
+        <Navbar />
+        <main className="py-8">{children}</main>
+      </div>
+    </Providers>
   )
 }
