@@ -12,7 +12,6 @@ import {
   unstable_cacheLife as cacheLife,
   unstable_cacheTag as cacheTag,
 } from "next/cache"
-import { type ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies"
 
 /**
  * Generates a random session token.
