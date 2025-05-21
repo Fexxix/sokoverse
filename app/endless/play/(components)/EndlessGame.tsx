@@ -142,7 +142,7 @@ export default function SokobanGame({
   }
 
   const generateNewLevelAndDiscardCurrent = () => {
-    if (!gameState?.isCompleted || generateLevelMutation.isPending) return
+    if (gameState?.isCompleted || generateLevelMutation.isPending) return
     setGameState(null)
     generateLevelMutation.mutate({ discardCurrentAndGenerateAnother: true })
   }
