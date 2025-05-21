@@ -149,7 +149,7 @@ export default function SokobanCanvasGameBoard({
       ref={canvasRef}
       width={levelWidth + CANVAS_PADDING}
       height={levelHeight + CANVAS_PADDING}
-      // className="border borer-border shadow-primary shadow-2xl rounded-md relative z-30"
+      className="relative z-50"
     />
   )
 }

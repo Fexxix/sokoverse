@@ -211,7 +211,11 @@ function LevelCompletionDialogLoadingState({
       <DialogDescription className="font-mono text-lg text-foreground/90">
         {description}
       </DialogDescription>
-      {actionState.pending && <LoadingState message={loadingMessage} />}
+      {actionState.pending && (
+        <div className="flex flex-col items-center">
+          <LoadingState message={loadingMessage} />
+        </div>
+      )}
     </DialogHeader>
   )
 }

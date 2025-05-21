@@ -1,9 +1,15 @@
-import { getEndlessLevelById } from "@/app/endless/records/actions"
+import { type Metadata } from "next"
+import { getEndlessLevelById } from "../actions"
 import EndlessReplayGame from "./EndlessReplayGame"
 import {
   withSessionValidatedPage,
   type ValidatedSession,
 } from "@/lib/server/auth/with-session-validated"
+
+export const metadata: Metadata = {
+  title: "Sokoverse | Endless Mode | Replay",
+  description: "Replay an Endless Mode level",
+}
 
 interface EndlessReplayPageProps {
   session: ValidatedSession
@@ -31,19 +37,17 @@ async function EndlessReplayPage({
     const level = await getEndlessLevelById({ id })
 
     return (
-      <div className="flex flex-col">
-        <EndlessReplayGame
-          level={{
-            level: level.levelData,
-            id: level.id,
-            setting: level.setting,
-            originalStats: {
-              steps: level.steps || 0,
-              timeMs: level.timeMs || 0,
-            },
-          }}
-        />
-      </div>
+      <EndlessReplayGame
+        level={{
+          level: level.levelData,
+          id: level.id,
+          setting: level.setting,
+          originalStats: {
+            steps: level.steps || 0,
+            timeMs: level.timeMs || 0,
+          },
+        }}
+      />
     )
   } catch (error) {
     return (

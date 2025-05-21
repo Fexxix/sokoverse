@@ -17,9 +17,18 @@ export const userTable = pgTable("userTable", {
   name: text("name"),
   pictureURL: text("picture_url"),
   isAnonymous: boolean("is_anonymous").default(true),
-  endlessSettings: jsonb("endless_settings").$type<EndlessSettings>(),
-  endlessLevelCount: integer("endless_level_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
+})
+
+export const endlessUserData = pgTable("endless_user_data", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  userId: integer("user_id")
+    .references(() => userTable.id)
+    .notNull()
+    .unique(),
+  settings: jsonb("settings").$type<EndlessSettings>(),
+  levelCount: integer("level_count").default(0),
+  updatedAt: timestamp("updated_at").defaultNow(),
 })
 
 export const sessionTable = pgTable("session", {
@@ -77,11 +86,22 @@ export const endlessLevels = pgTable("endless_levels", {
 })
 
 // Relations
-export const userRelations = relations(userTable, ({ many }) => ({
+export const userRelations = relations(userTable, ({ many, one }) => ({
   spikeVaults: many(spikeVaults),
   spikeVaultLevels: many(spikeVaultLevels),
   endlessLevels: many(endlessLevels),
+  endlessUserData: one(endlessUserData),
 }))
+
+export const endlessUserDataRelations = relations(
+  endlessUserData,
+  ({ one }) => ({
+    user: one(userTable, {
+      fields: [endlessUserData.userId],
+      references: [userTable.id],
+    }),
+  })
+)
 
 export const spikeVaultsRelations = relations(spikeVaults, ({ one, many }) => ({
   user: one(userTable, {
@@ -116,3 +136,5 @@ export type User = InferSelectModel<typeof userTable>
 export type Session = InferSelectModel<typeof sessionTable>
 export type SpikeVault = InferSelectModel<typeof spikeVaults>
 export type SpikeVaultLevel = InferSelectModel<typeof spikeVaultLevels>
+export type EndlessLevel = InferSelectModel<typeof endlessLevels>
+export type EndlessUserData = InferSelectModel<typeof endlessUserData>

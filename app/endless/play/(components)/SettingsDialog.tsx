@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Fragment } from "react"
 import { Settings, Save, AlertTriangle, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -27,8 +27,14 @@ import {
   ENDLESS_PRESET_CONFIG,
   type EndlessSettings,
 } from "@/lib/common/constants"
-import { saveSettings } from "@/app/endless/actions"
+import { saveSettings } from "@/app/endless/play/actions"
 import { useMutation } from "@tanstack/react-query"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 // Level presets with performance indicators
 export const PRESET_LEVELS_WITH_DESCRIPTION = {
@@ -88,6 +94,20 @@ export function SettingsDialog({
       return setShowSettingsDialog(true)
     }
   }, [firstVisit, setShowSettingsDialog])
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (!firstVisit && (e.key === "x" || e.key === "X")) {
+      e.preventDefault()
+      setShowSettingsDialog(!showSettingsDialog)
+    }
+  }
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown)
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [handleKeyDown])
 
   const saveSettingsMutation = useMutation({
     mutationFn: saveSettings,
@@ -167,19 +187,29 @@ export function SettingsDialog({
     setShowUnsavedChangesAlert(false)
   }
 
+  const TriggerWrapper = firstVisit ? Fragment : TooltipProvider
+
   return (
     <>
       <Dialog open={showSettingsDialog} onOpenChange={handleDialogOpenChange}>
         <DialogTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            className="pixelated-border"
-            aria-label="Game settings"
-            disabled={isLoading}
-          >
-            <Settings className="h-5 w-5" />
-          </Button>
+          <TriggerWrapper>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Game settings"
+                  disabled={isLoading}
+                >
+                  <Settings className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p className="font-mono">Game settings (X)</p>
+              </TooltipContent>
+            </Tooltip>
+          </TriggerWrapper>
         </DialogTrigger>
         <DialogContent
           className="bg-background border-primary my-4"

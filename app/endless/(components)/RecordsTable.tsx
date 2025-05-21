@@ -166,7 +166,7 @@ export default function RecordsTable({
                       size="icon"
                       className="pixelated-border"
                     >
-                      <Link href={`/endless/records/replay?id=${record.id}`}>
+                      <Link href={`/endless/replay?id=${record.id}`}>
                         <Play className="h-4 w-4" />
                       </Link>
                     </Button>

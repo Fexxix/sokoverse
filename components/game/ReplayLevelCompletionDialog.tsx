@@ -65,7 +65,11 @@ export function ReplayLevelCompletionDialog({
             <DialogDescription className="font-mono text-lg text-foreground/90">
               Your level is being updated. Please wait...
             </DialogDescription>
-            {updatingLevel && <LoadingState message="Updating level..." />}
+            {updatingLevel && (
+              <div className="flex flex-col items-center">
+                <LoadingState message="Updating level" />
+              </div>
+            )}
             {updatingLevelErrorComponent}
           </DialogHeader>
         </>
@@ -109,12 +113,12 @@ export function ReplayLevelCompletionDialog({
               >
                 Replay Level <RotateCcw className="ml-2 h-4 w-4" />
               </Button>
-              <Link href="/endless/records" className="contents">
+              <Link href="/endless" className="contents">
                 <Button
                   variant="link"
                   className="font-pixel pixelated-border flex items-center justify-center"
                 >
-                  Return to Records
+                  Return
                 </Button>
               </Link>
             </div>

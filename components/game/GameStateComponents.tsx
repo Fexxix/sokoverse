@@ -5,6 +5,7 @@ import type React from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { RotateCcw, AlertTriangle, RefreshCw, Terminal } from "lucide-react"
+import { Loader } from "@/components/Loaders"
 
 interface LoadingStateProps {
   message?: string
@@ -13,14 +14,7 @@ interface LoadingStateProps {
 export function LoadingState({
   message = "Loading level...",
 }: LoadingStateProps) {
-  return (
-    <div className="flex flex-col items-center">
-      <div className="flex flex-col justify-center items-center gap-2 h-64">
-        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-        <p className="ml-4 font-pixel">{message}</p>
-      </div>
-    </div>
-  )
+  return <Loader message={message} />
 }
 
 interface ErrorStateProps {
@@ -89,7 +83,7 @@ export function GameControls({
   children,
 }: GameControlsProps) {
   return (
-    <div className="mb-4 w-full max-w-md flex justify-between items-center">
+    <div className="p-2 w-full max-w-md flex justify-between items-center">
       <Button
         asChild
         variant="outline"

@@ -6,17 +6,24 @@ export function BrailleLoader({ className }: { className?: string }) {
 
 export default function TypeWriterLoader({
   className,
+  message = "Loading",
 }: {
   className?: string
+  message?: string
 }) {
-  return <div className={cn("typewriter-loader", className)} />
+  return (
+    <div className="flex items-center">
+      <p className="font-pixel">{message}</p>
+      <div className={cn("typewriter-loader", className)} />
+    </div>
+  )
 }
 
-export function FullPageLoader() {
+export function Loader({ message }: { message?: string }) {
   return (
-    <div className="h-screen w-full flex flex-col justify-center items-center gap-2">
+    <>
       <BrailleLoader />
-      <TypeWriterLoader />
-    </div>
+      <TypeWriterLoader message={message} />
+    </>
   )
 }

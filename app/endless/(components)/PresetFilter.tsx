@@ -39,7 +39,7 @@ export default function PresetFilter({ currentPreset }: PresetFilterProps) {
           <SelectValue placeholder="Filter by difficulty" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Difficulties</SelectItem>
+          <SelectItem value="all">All</SelectItem>
           <SelectItem value="casual">Casual</SelectItem>
           <SelectItem value="balanced">Balanced</SelectItem>
           <SelectItem value="challenging">Challenging</SelectItem>

@@ -10,40 +10,40 @@ import {
   type GameState,
   type GameStats as GameStatsType,
 } from "@/lib/client/game-logic"
-import { ListFilter } from "lucide-react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import SokobanCanvasGameBoard from "@/components/game/SokobanCanvasGameBoard"
 import { SettingsDialog } from "./SettingsDialog"
 import { LevelCompletionDialog } from "@/components/game/LevelCompletionDialog"
 import { useToast } from "@/hooks/use-toast"
-import {
-  LoadingState,
-  ErrorState,
-  GameControls,
-  GameStats,
-} from "@/components/game/GameStateComponents"
+import { LoadingState, ErrorState } from "@/components/game/GameStateComponents"
 import type { EndlessSettings } from "@/lib/common/constants"
 import {
   generateEndlessLevel,
   submitLevel,
   updateLevel,
-} from "@/app/endless/actions"
+} from "@/app/endless/play/actions"
 import { hmacSign } from "@/lib/client/wasm/hmac"
 import { useAuth } from "@/contexts/auth"
 import { useGameTimer, useGameCompletion } from "@/hooks/useGameHooks"
 import GameInfoDialog from "@/components/game/GameInfoDialog"
+import { GameStatsHeader } from "@/components/game/GameStatsHeader"
+import { Infinity, RefreshCw } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { FloatingGameConrolsSidebar } from "@/components/game/FloatingGameConrolsSidebar"
+import {
+  TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+} from "@/components/ui/tooltip"
+import Link from "next/link"
 
 export default function SokobanGame({
   endlessSettings,
   initialLevel,
   firstVisit,
-  showRecordsLink = false,
 }: {
   endlessSettings: EndlessSettings | null
   initialLevel: { level: string[]; levelNumber: number; id: string } | null
   firstVisit: boolean
-  showRecordsLink?: boolean
 }) {
   const [gameState, setGameState] = useState<GameState | null>(
     initialLevel ? initializeGameState(initialLevel.level) : null
@@ -136,11 +136,13 @@ export default function SokobanGame({
 
   // Generate a new level
   const generateNewLevel = () => {
+    if (generateLevelMutation.isPending) return
     setGameState(null)
     generateLevelMutation.mutate({})
   }
 
   const generateNewLevelAndDiscardCurrent = () => {
+    if (!gameState?.isCompleted || generateLevelMutation.isPending) return
     setGameState(null)
     generateLevelMutation.mutate({ discardCurrentAndGenerateAnother: true })
   }
@@ -226,61 +228,75 @@ export default function SokobanGame({
   )
 
   return (
-    <div className="flex flex-col items-center">
-      {/* Level title */}
-      <div className="text-center mb-6">
-        <h1 className="text-4xl font-pixel text-primary">
-          Level {levelNumber}
-        </h1>
-      </div>
-
+    <div className="flex flex-col items-center justify-center h-full gap-2">
       {/* Game controls */}
-      <GameControls
+      <FloatingGameConrolsSidebar
         onReset={resetCurrentLevel}
-        onNewLevel={generateNewLevelAndDiscardCurrent}
         isLoading={isLoading}
       >
-        {settingsDialog}
-
-        {showRecordsLink && (
-          <Button
-            asChild
-            variant="outline"
-            size="icon"
-            className="pixelated-border"
-            aria-label="View records"
-          >
-            <Link href="/endless/records">
-              <ListFilter className="h-5 w-5" />
-            </Link>
-          </Button>
-        )}
-
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Return to records"
+              asChild
+            >
+              <Link href="/endless">
+                <Infinity className="size-5" />
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p className="font-mono">Return</p>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={generateNewLevelAndDiscardCurrent}
+              aria-label="New level"
+              disabled={isLoading}
+            >
+              <RefreshCw
+                className={`h-5 w-5 ${isLoading ? "animate-spin" : ""}`}
+              />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p className="font-mono">New level (N)</p>
+          </TooltipContent>
+        </Tooltip>
         <GameInfoDialog />
-      </GameControls>
+        {settingsDialog}
+      </FloatingGameConrolsSidebar>
 
-      {/* Game stats */}
-      <GameStats steps={stats.steps} time={formatTime(stats.time)} />
+      {/* Game stats header with level number */}
+      {!isLoading && (
+        <GameStatsHeader
+          level={levelNumber}
+          steps={stats.steps}
+          time={formatTime(stats.time)}
+        />
+      )}
 
       {/* Game grid */}
-      <div className="bg-background/80 p-4 rounded-lg">
-        {gameState ? (
-          <SokobanCanvasGameBoard
-            gameState={gameState}
-            onReset={resetCurrentLevel}
-            setGameState={setGameState}
-            onNewLevel={generateNewLevelAndDiscardCurrent}
-          />
-        ) : (
-          <LoadingState
-            message={
-              generateLevelMutation.isPending
-                ? "Generating level..."
-                : "Loading..."
-            }
-          />
-        )}
-      </div>
+      {gameState ? (
+        <SokobanCanvasGameBoard
+          gameState={gameState}
+          onReset={resetCurrentLevel}
+          setGameState={setGameState}
+          onNewLevel={generateNewLevelAndDiscardCurrent}
+        />
+      ) : (
+        <LoadingState
+          message={
+            generateLevelMutation.isPending ? "Generating level" : "Loading"
+          }
+        />
+      )}
 
       {/* Level completion dialog */}
       <LevelCompletionDialog

@@ -14,7 +14,6 @@ import { Vault } from "lucide-react"
 import SokobanCanvasGameBoard from "@/components/game/SokobanCanvasGameBoard"
 import { LevelCompletionDialog } from "@/components/game/LevelCompletionDialog"
 import { useToast } from "@/hooks/use-toast"
-import { GameControls, GameStats } from "@/components/game/GameStateComponents"
 import {
   getSpikeVaultLevel,
   completeSpikeVaultLevel,
@@ -27,6 +26,13 @@ import Link from "next/link"
 import { useGameCompletion, useGameTimer } from "@/hooks/useGameHooks"
 import GameInfoDialog from "@/components/game/GameInfoDialog"
 import { SpikeVaultCompletionDialog } from "./SpikeVaultCompletionDialog"
+import { FloatingGameConrolsSidebar } from "@/components/game/FloatingGameConrolsSidebar"
+import {
+  TooltipTrigger,
+  TooltipContent,
+  Tooltip,
+} from "@/components/ui/tooltip"
+import { GameStatsHeader } from "@/components/game/GameStatsHeader"
 
 interface SpikeVaultGameProps {
   initialLevel: Awaited<ReturnType<typeof getSpikeVaultLevel>>["level"]
@@ -194,40 +200,41 @@ export default function SpikeVaultGame({
   const stats = getGameStats(gameState!)
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="mb-4 w-full flex items-center justify-between">
-        <div className="flex items-center w-full">
-          <h1 className="text-2xl text-center font-pixel text-primary w-full">
-            {vaultName} - Level {levelNumber}
-          </h1>
-        </div>
-      </div>
+    <div className="flex flex-col items-center justify-center h-full gap-2">
       {/* Game controls */}
-      <GameControls onReset={resetCurrentLevel}>
-        <Button
-          asChild
-          variant="outline"
-          size="icon"
-          className="pixelated-border"
-          aria-label="Back to Vault"
-        >
-          <Link href={`/spike-vaults/${slug}`}>
-            <Vault className="size-4" />
-          </Link>
-        </Button>
+      <FloatingGameConrolsSidebar onReset={resetCurrentLevel}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Back to Vault"
+              asChild
+            >
+              <Link href={`/spike-vaults/${slug}`}>
+                <Vault className="size-4" />
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p className="font-mono">Back to {vaultName}</p>
+          </TooltipContent>
+        </Tooltip>
         <GameInfoDialog />
-      </GameControls>
+      </FloatingGameConrolsSidebar>
       {/* Game stats */}
-      <GameStats steps={stats.steps} time={formatTime(stats.time)} />
+      <GameStatsHeader
+        level={levelNumber}
+        steps={stats.steps}
+        time={formatTime(stats.time)}
+      />
 
       {/* Game grid */}
-      <div className="bg-background/80 p-4 rounded-lg">
-        <SokobanCanvasGameBoard
-          gameState={gameState}
-          onReset={resetCurrentLevel}
-          setGameState={setGameState}
-        />
-      </div>
+      <SokobanCanvasGameBoard
+        gameState={gameState}
+        onReset={resetCurrentLevel}
+        setGameState={setGameState}
+      />
 
       {/* Level completion dialog */}
       <LevelCompletionDialog

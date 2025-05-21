@@ -12,7 +12,7 @@ import NextTopLoader from "nextjs-toploader"
 import ThemeFaviconUpdater from "@/components/ThemeFaviconUpdater"
 import PreloadResources from "@/components/PreloadResources"
 import { Suspense } from "react"
-import { FullPageLoader } from "@/components/Loaders"
+import { Loader } from "@/components/Loaders"
 
 const pressStart2P = Press_Start_2P({
   weight: "400",
@@ -46,7 +46,13 @@ export default async function RootLayout({
       >
         <PreloadResources />
         <NextTopLoader showSpinner={false} />
-        <Suspense fallback={<FullPageLoader />}>
+        <Suspense
+          fallback={
+            <div className="h-screen w-full flex flex-col justify-center items-center gap-2">
+              <Loader />
+            </div>
+          }
+        >
           <SessionWrapper>{children}</SessionWrapper>
         </Suspense>
         <SoundEffect />

@@ -52,15 +52,7 @@ async function SpikeVaultPlayPage({
   const { level, vaultName } = result.data
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="w-full max-w-4xl">
-        <SpikeVaultGame
-          initialLevel={level}
-          vaultName={vaultName}
-          slug={slug}
-        />
-      </div>
-    </div>
+    <SpikeVaultGame initialLevel={level} vaultName={vaultName} slug={slug} />
   )
 }
 
