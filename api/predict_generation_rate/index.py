@@ -59,5 +59,4 @@ def predict_generation_rate():
         return jsonify(response),200
 
     except Exception as e:
-        print(f"Prediction error: {e}")
         return jsonify({"error": "Prediction failed", "details": str(e)}), 500
