@@ -1,14 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useMutation } from "@tanstack/react-query"
 import {
   initializeGameState,
   resetLevel,
   getGameStats,
   formatTime,
   type GameState,
-  type GameStats as GameStatsType,
 } from "@/lib/client/game-logic"
 import SokobanCanvasGameBoard from "@/components/game/SokobanCanvasGameBoard"
 import { SettingsDialog } from "./SettingsDialog"
@@ -16,11 +14,7 @@ import { LevelCompletionDialog } from "@/components/game/LevelCompletionDialog"
 import { useToast } from "@/hooks/use-toast"
 import { LoadingState, ErrorState } from "@/components/game/GameStateComponents"
 import type { EndlessSettings } from "@/lib/common/constants"
-import {
-  generateEndlessLevel,
-  submitLevel,
-  updateLevel,
-} from "@/app/endless/play/actions"
+import { generateEndlessLevel, submitLevel, updateLevel } from "../actions"
 import { hmacSign } from "@/lib/client/wasm/hmac"
 import { useAuth } from "@/contexts/auth"
 import { useGameTimer, useGameCompletion } from "@/hooks/useGameHooks"
@@ -35,6 +29,8 @@ import {
   TooltipContent,
 } from "@/components/ui/tooltip"
 import Link from "next/link"
+import { useAction } from "next-safe-action/hooks"
+import { TooltipProvider } from "@/components/ui/tooltip"
 
 export default function SokobanGame({
   endlessSettings,
@@ -64,10 +60,8 @@ export default function SokobanGame({
     setGameState(initializeGameState(initialLevel.level))
   }, [!!initialLevel, setGameState])
 
-  // Mutation for generating a level via API
-  const generateLevelMutation = useMutation({
-    mutationFn: generateEndlessLevel,
-    onSuccess: (data) => {
+  const generateLevelAction = useAction(generateEndlessLevel, {
+    onSuccess: ({ data }) => {
       if (data && data.level) {
         setGameState(initializeGameState(data.level))
         setLevelNumber(data.levelNumber ?? 1)
@@ -84,47 +78,35 @@ export default function SokobanGame({
     },
   })
 
-  const submitLevelMutation = useMutation({
-    mutationFn: async () => {
-      const strMoves = gameState?.moves.join("") ?? ""
-      //userId:currentLevelNumber:steps:time:moves
-      const payload = `${user?.id}:${levelNumber}:${stats.steps}:${stats.time}:${strMoves}`
-      const hash = await hmacSign(payload)
-
-      await submitLevel({
-        stats,
-        moves: strMoves,
-        hash,
-      })
-    },
+  const submitLevelAction = useAction(submitLevel, {
     onSuccess: () => {
       toast({
         title: "Level submitted",
         description: "Your level has been submitted successfully.",
       })
     },
+    onError: ({ error: { serverError } }) => {
+      if (serverError && serverError.type === "internal-error") {
+        throw new Error(serverError.message)
+      }
+    },
   })
 
-  const updateLevelMutation = useMutation({
-    mutationFn: async ({
-      stats,
-      levelId,
-    }: {
-      stats: GameStatsType
-      levelId: string
-    }) => {
-      const strMoves = gameState?.moves.join("") ?? ""
-      //userId:levelId:currentLevelNumber:steps:time:moves
-      const payload = `${user?.id}:${levelId}:${levelNumber}:${stats.steps}:${stats.time}:${strMoves}`
-      const hash = await hmacSign(payload)
+  const handleSubmitLevel = async () => {
+    if (!gameState) return
+    const strMoves = gameState.moves.join("")
+    //userId:currentLevelNumber:steps:time:moves
+    const payload = `${user?.id}:${levelNumber}:${stats.steps}:${stats.time}:${strMoves}`
+    const hash = await hmacSign(payload)
 
-      await updateLevel({
-        stats,
-        moves: strMoves,
-        levelId,
-        hash,
-      })
-    },
+    await submitLevelAction.executeAsync({
+      stats,
+      moves: strMoves,
+      hash,
+    })
+  }
+
+  const updateLevelAction = useAction(updateLevel, {
     onSuccess: () => {
       setIsReplay(false)
       toast({
@@ -132,29 +114,53 @@ export default function SokobanGame({
         description: "Your level has been updated successfully.",
       })
     },
+    onError: ({ error: { serverError } }) => {
+      if (serverError && serverError.type === "internal-error") {
+        throw new Error(serverError.message)
+      }
+    },
   })
+
+  // Update level
+  const handleUpdateLevel = async () => {
+    if (!gameState) return
+    const strMoves = gameState.moves.join("")
+    // userId:levelId:currentLevelNumber:steps:time:moves
+    const payload = `${user?.id}:${levelId}:${levelNumber}:${stats.steps}:${stats.time}:${strMoves}`
+    const hash = await hmacSign(payload)
+
+    await updateLevelAction.executeAsync({
+      stats,
+      levelId,
+      moves: strMoves,
+      hash,
+    })
+  }
 
   // Generate a new level
   const generateNewLevel = () => {
-    if (generateLevelMutation.isPending) return
+    if (generateLevelAction.isPending) return
     setGameState(null)
-    generateLevelMutation.mutate({})
+    generateLevelAction.executeAsync(undefined)
   }
 
   const generateNewLevelAndDiscardCurrent = () => {
-    if (gameState?.isCompleted || generateLevelMutation.isPending) return
+    if (gameState?.isCompleted || generateLevelAction.isPending) return
     setGameState(null)
-    generateLevelMutation.mutate({ discardCurrentAndGenerateAnother: true })
+    generateLevelAction.executeAsync({ discardCurrentAndGenerateAnother: true })
   }
 
   // Reset current level
   const resetCurrentLevel = () => {
     if (
-      (generateLevelMutation.data && generateLevelMutation.data.level) ||
+      (generateLevelAction.result.data &&
+        generateLevelAction.result.data.level) ||
       initialLevel
     ) {
       setGameState(
-        resetLevel(generateLevelMutation.data?.level ?? initialLevel!.level)
+        resetLevel(
+          generateLevelAction.result.data?.level ?? initialLevel!.level
+        )
       )
     }
   }
@@ -178,7 +184,7 @@ export default function SokobanGame({
 
   // Handle level completion
   const handleLevelComplete = () => {
-    if (!isReplay) submitLevelMutation.mutate()
+    if (!isReplay) handleSubmitLevel()
     setShowCompletionDialog(true)
   }
 
@@ -193,26 +199,26 @@ export default function SokobanGame({
     onLevelComplete: handleLevelComplete,
   })
 
-  const handleUpdateLevel = () => {
-    updateLevelMutation.mutate({ stats, levelId })
-  }
-
   // Loading state
-  const isLoading = generateLevelMutation.isPending
+  const isLoading = generateLevelAction.isPending
 
   // Error state
-  if (generateLevelMutation.error) {
+  if (
+    generateLevelAction.hasErrored &&
+    generateLevelAction.result.serverError?.type === "action-error"
+  ) {
     return (
       <ErrorState
         levelNumber={levelNumber}
-        errorMessage={
-          generateLevelMutation.error instanceof Error
-            ? generateLevelMutation.error.message
-            : "An unknown error occurred"
-        }
+        errorMessage={generateLevelAction.result.serverError.message}
         onRetry={generateNewLevel}
       />
     )
+  } else if (
+    generateLevelAction.hasErrored &&
+    generateLevelAction.result.serverError?.type === "internal-error"
+  ) {
+    throw new Error(generateLevelAction.result.serverError.message)
   }
 
   const settingsDialog = (
@@ -293,7 +299,7 @@ export default function SokobanGame({
       ) : (
         <LoadingState
           message={
-            generateLevelMutation.isPending ? "Generating level" : "Loading"
+            generateLevelAction.isPending ? "Generating level" : "Loading"
           }
         />
       )}
@@ -305,21 +311,25 @@ export default function SokobanGame({
         onReplayLevel={handleReplayLevel}
         stats={stats}
         mode="endless"
-        settingsDialog={settingsDialog}
+        settingsDialog={<TooltipProvider>{settingsDialog}</TooltipProvider>}
         submitLevelState={{
-          pending: submitLevelMutation.isPending,
-          error: submitLevelMutation.error,
+          pending: submitLevelAction.isPending,
+          error:
+            submitLevelAction.result.validationErrors?.stats?.time
+              ?._errors?.[0] ?? null,
         }}
         updateLevelState={
           isReplay
             ? {
-                pending: updateLevelMutation.isPending,
-                error: updateLevelMutation.error,
+                pending: updateLevelAction.isPending,
+                error:
+                  updateLevelAction.result.validationErrors?.stats?.time
+                    ?._errors?.[0] ?? null,
               }
             : undefined
         }
         onUpdateLevel={isReplay ? handleUpdateLevel : null}
-        onSubmitRetry={submitLevelMutation.mutate}
+        onSubmitRetry={handleLevelComplete}
       />
     </div>
   )

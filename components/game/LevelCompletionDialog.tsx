@@ -23,7 +23,7 @@ import Link from "next/link"
 
 type AsyncState = {
   pending: boolean
-  error: Error | null
+  error: string | null
 }
 
 interface LevelCompletionDialogProps {
@@ -75,7 +75,7 @@ export function LevelCompletionDialog({
       if (submitLevelState?.pending) {
         return (
           <LevelCompletionDialogLoadingState
-            loadingMessage="Submitting level..."
+            loadingMessage="Submitting level"
             description="Level is being submitted. Please wait..."
             actionState={submitLevelState}
           />
@@ -84,7 +84,7 @@ export function LevelCompletionDialog({
       if (updateLevelState?.pending) {
         return (
           <LevelCompletionDialogLoadingState
-            loadingMessage="Updating level..."
+            loadingMessage="Updating level"
             description="Level is being updated. Please wait..."
             actionState={updateLevelState}
           />
@@ -158,7 +158,7 @@ function LevelCompletionDialogErrorState({
   onRetry: () => void
   description: string
 }) {
-  const errorMessage = actionState.error?.message ?? "An unknown error occurred"
+  const errorMessage = actionState.error ?? "An unknown error occurred"
 
   return (
     <DialogHeader>

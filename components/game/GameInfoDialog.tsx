@@ -16,18 +16,18 @@ import {
 export default function GameInfoDialog() {
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        <Tooltip>
+      <Tooltip>
+        <DialogTrigger asChild>
           <TooltipTrigger asChild>
             <Button variant="outline" size="icon" aria-label="Game information">
               <Info className="h-5 w-5" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="right">
-            <p className="font-mono">Game information</p>
-          </TooltipContent>
-        </Tooltip>
-      </DialogTrigger>
+        </DialogTrigger>
+        <TooltipContent side="right">
+          <p className="font-mono">Game information</p>
+        </TooltipContent>
+      </Tooltip>
       <DialogContent className="bg-background border-primary">
         <DialogHeader>
           <DialogTitle className="font-pixel text-primary">

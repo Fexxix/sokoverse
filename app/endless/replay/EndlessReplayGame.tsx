@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useMutation } from "@tanstack/react-query"
+import { useAction } from "next-safe-action/hooks"
 import {
   initializeGameState,
   resetLevel,
@@ -50,28 +50,39 @@ export default function EndlessReplayGame({ level }: EndlessReplayGameProps) {
   const { toast } = useToast()
   const { user } = useAuth()
 
-  // Update level mutation
-  const updateLevelMutation = useMutation({
-    mutationFn: async () => {
-      const strMoves = gameState?.moves.join("") ?? ""
-      //userId:levelId:steps:time:moves
-      const payload = `${user?.id}:${level.id}:${stats.steps}:${stats.time}:${strMoves}`
-      const hash = await hmacSign(payload)
-
-      await updateLevel({
-        stats,
-        moves: strMoves,
-        levelId: level.id,
-        hash,
-      })
-    },
+  // Update level action
+  const updateLevelAction = useAction(updateLevel, {
     onSuccess: () => {
       toast({
         title: "Level updated",
         description: "Your level has been updated successfully.",
       })
     },
+    onError: ({ error: { validationErrors } }) => {
+      toast({
+        title: "Error",
+        description:
+          validationErrors?.stats?.time?._errors?.[0] ??
+          "An unknown error occurred",
+        variant: "destructive",
+      })
+    },
   })
+
+  const handleUpdateLevel = async () => {
+    if (!gameState) return
+
+    const strMoves = gameState.moves.join("")
+    const payload = `${user?.id}:${level.id}:${stats.steps}:${stats.time}:${strMoves}`
+    const hash = await hmacSign(payload)
+
+    await updateLevelAction.executeAsync({
+      levelId: level.id,
+      stats,
+      moves: strMoves,
+      hash,
+    })
+  }
 
   // Reset current level
   const resetCurrentLevel = () => {
@@ -99,18 +110,17 @@ export default function EndlessReplayGame({ level }: EndlessReplayGameProps) {
   const handleReplayLevel = () => {
     setShowCompletionDialog(false)
     resetCurrentLevel()
-    updateLevelMutation.reset()
+    updateLevelAction.reset()
   }
 
   // Error state
-  const updatingLevelErrorComponent = updateLevelMutation.isError ? (
+  const updatingLevelErrorComponent = updateLevelAction.hasErrored ? (
     <ErrorState
       errorMessage={
-        updateLevelMutation.error instanceof Error
-          ? updateLevelMutation.error.message
-          : "An unknown error occurred"
+        updateLevelAction.result.serverError?.message ??
+        "An unknown error occurred"
       }
-      onRetry={updateLevelMutation.mutate}
+      onRetry={handleUpdateLevel}
     />
   ) : null
 
@@ -153,7 +163,7 @@ export default function EndlessReplayGame({ level }: EndlessReplayGameProps) {
           setGameState={setGameState}
         />
       ) : (
-        <LoadingState message="Loading  " />
+        <LoadingState message="Loading" />
       )}
 
       {/* Level completion dialog */}
@@ -164,10 +174,10 @@ export default function EndlessReplayGame({ level }: EndlessReplayGameProps) {
           steps: stats.steps,
           time: formatTime(stats.time),
         }}
-        updateLevel={updateLevelMutation.mutate}
-        updatingLevel={updateLevelMutation.isPending}
+        updateLevel={handleUpdateLevel}
+        updatingLevel={updateLevelAction.isPending}
         updatingLevelErrorComponent={updatingLevelErrorComponent}
-        updatingLevelSucess={updateLevelMutation.isSuccess}
+        updatingLevelSucess={updateLevelAction.hasSucceeded}
       />
     </div>
   )

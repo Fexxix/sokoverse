@@ -36,7 +36,7 @@ export function FloatingGameConrolsSidebar({
             </Button>
           </TooltipTrigger>
           <TooltipContent side="right">
-            <p className="font-mono">Return to terminal (Esc)</p>
+            <p className="font-mono">Return to terminal</p>
           </TooltipContent>
         </Tooltip>
 

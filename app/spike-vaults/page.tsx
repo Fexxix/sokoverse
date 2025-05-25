@@ -1,5 +1,4 @@
-import { Suspense } from "react"
-import { getSpikeVaults } from "./actions"
+import { getSpikeVaults } from "./queries"
 import {
   withSessionValidatedPage,
   type ValidatedSession,
@@ -22,9 +21,9 @@ interface SpikeVaultsPageProps {
   session: ValidatedSession
 }
 
-async function SpikeVaultsContent() {
+async function SpikeVaultsContent({ session }: SpikeVaultsPageProps) {
   // Fetch user's spike vaults
-  const vaults = await getSpikeVaults()
+  const vaults = await getSpikeVaults(session.user.id)
 
   // Count vaults by status
   const inProgressCount = vaults.filter(
@@ -45,13 +44,7 @@ async function SpikeVaultsContent() {
                 Create and explore your custom sokoban puzzle collections
               </CardDescription>
             </div>
-            <div>
-              {vaults.length > 0 && (
-                <CreateSpikeVaultDialog
-                  existingVaultNames={vaults.map((vault) => vault.name)}
-                />
-              )}
-            </div>
+            <div>{vaults.length > 0 && <CreateSpikeVaultDialog />}</div>
           </div>
         </CardHeader>
         <CardContent>
@@ -114,38 +107,11 @@ async function SpikeVaultsContent() {
   )
 }
 
-async function SpikeVaultsPage({ session: _ }: SpikeVaultsPageProps) {
+async function SpikeVaultsPage({ session }: SpikeVaultsPageProps) {
   return (
     <div className="flex flex-col items-center w-full px-4 sm:px-6">
       <div className="w-full max-w-6xl">
-        <Suspense
-          fallback={
-            <div className="flex flex-col items-center justify-center py-12">
-              <Card className="w-full border-2 pixelated-border bg-background/80 p-6">
-                <CardHeader className="pb-2">
-                  <div className="flex flex-col items-center">
-                    <CardTitle className="text-4xl font-pixel text-primary">
-                      SPIKE VAULTS
-                    </CardTitle>
-                    <CardDescription className="font-mono text-sm mt-1">
-                      Loading your custom puzzle collections...
-                    </CardDescription>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex justify-center pt-6">
-                  <div className="w-full max-w-md h-4 bg-muted rounded-full overflow-hidden pixelated-border">
-                    <div
-                      className="h-full bg-primary animate-pulse-slow"
-                      style={{ width: "60%" }}
-                    ></div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          }
-        >
-          <SpikeVaultsContent />
-        </Suspense>
+        <SpikeVaultsContent session={session} />
       </div>
     </div>
   )

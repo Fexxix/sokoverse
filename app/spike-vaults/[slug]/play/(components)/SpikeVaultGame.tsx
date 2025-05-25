@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useMutation } from "@tanstack/react-query"
 import {
   initializeGameState,
   resetLevel,
@@ -15,10 +14,8 @@ import SokobanCanvasGameBoard from "@/components/game/SokobanCanvasGameBoard"
 import { LevelCompletionDialog } from "@/components/game/LevelCompletionDialog"
 import { useToast } from "@/hooks/use-toast"
 import {
-  getSpikeVaultLevel,
   completeSpikeVaultLevel,
   updateSpikeVaultLevel,
-  revalidateSpikeVault,
 } from "@/app/spike-vaults/[slug]/play/actions"
 import { useAuth } from "@/contexts/auth"
 import { hmacSign } from "@/lib/client/wasm/hmac"
@@ -33,6 +30,8 @@ import {
   Tooltip,
 } from "@/components/ui/tooltip"
 import { GameStatsHeader } from "@/components/game/GameStatsHeader"
+import type { getSpikeVaultLevel } from "../queries"
+import { useAction } from "next-safe-action/hooks"
 
 interface SpikeVaultGameProps {
   initialLevel: Awaited<ReturnType<typeof getSpikeVaultLevel>>["level"]
@@ -70,51 +69,33 @@ export default function SpikeVaultGame({
   }, [])
 
   // Mutation for submitting a completed level
-  const completeLevelMutation = useMutation({
-    mutationFn: async () => {
-      const strMoves = gameState!.moves.join("")
-      const payload = `${user?.id}:${levelId}:${levelNumber}:${stats.steps}:${stats.time}:${strMoves}`
-      const hash = await hmacSign(payload)
-
-      return completeSpikeVaultLevel({
-        levelId,
-        stats,
-        moves: strMoves,
-        hash,
-      })
-    },
-    onSuccess: (data) => {
+  const completeLevelAction = useAction(completeSpikeVaultLevel, {
+    onSuccess: ({ data }) => {
       toast({
-        title: data.isVaultCompleted ? "Vault Completed" : "Level Completed!",
-        description: data.isVaultCompleted
+        title: data?.isVaultCompleted ? "Vault Completed" : "Level Completed!",
+        description: data?.isVaultCompleted
           ? "Congratulations! You've completed this Spike Vault!"
           : "",
       })
     },
   })
 
-  useEffect(() => {
-    return () => {
-      if (completeLevelMutation.data && isUnmounting.current) {
-        revalidateSpikeVault({ slug })
-      }
-    }
-  }, [completeLevelMutation.data, slug])
+  const executeCompleteLevelAction = async () => {
+    const strMoves = gameState!.moves.join("")
+    // userId:levelId:levelNumber:steps:time:moves
+    const payload = `${user?.id}:${levelId}:${levelNumber}:${stats.steps}:${stats.time}:${strMoves}`
+    const hash = await hmacSign(payload)
+
+    completeLevelAction.execute({
+      levelId,
+      stats,
+      moves: strMoves,
+      hash,
+    })
+  }
 
   // Mutation for updating a level for a replay
-  const updateLevelMutation = useMutation({
-    mutationFn: async () => {
-      const strMoves = gameState!.moves.join("")
-      const payload = `${user?.id}:${levelId}:${levelNumber}:${stats.steps}:${stats.time}:${strMoves}`
-      const hash = await hmacSign(payload)
-
-      return updateSpikeVaultLevel({
-        levelId,
-        stats,
-        moves: strMoves,
-        hash,
-      })
-    },
+  const updateLevelAction = useAction(updateSpikeVaultLevel, {
     onSuccess: () => {
       setIsReplay(false)
       toast({
@@ -124,24 +105,37 @@ export default function SpikeVaultGame({
     },
   })
 
+  const executeUpdateLevelAction = async () => {
+    const strMoves = gameState!.moves.join("")
+    const payload = `${user?.id}:${levelId}:${levelNumber}:${stats.steps}:${stats.time}:${strMoves}`
+    const hash = await hmacSign(payload)
+
+    updateLevelAction.execute({
+      levelId,
+      stats,
+      moves: strMoves,
+      hash,
+    })
+  }
+
   // Handle level completion
   const handleLevelComplete = () => {
     // If this is the first level, don't update the previous level data
     setPrevLevelData(
       prevLevelData === initialLevel.levelData
         ? prevLevelData
-        : completeLevelMutation.data?.level?.levelData ?? prevLevelData
+        : completeLevelAction.result.data?.level?.levelData ?? prevLevelData
     )
 
-    if (!isReplay && !completeLevelMutation.data?.isVaultCompleted) {
-      completeLevelMutation.mutate()
+    if (!isReplay && !completeLevelAction.result.data?.isVaultCompleted) {
+      executeCompleteLevelAction()
     }
     if (!showVaultCompletionDialog) setShowCompletionDialog(true)
   }
 
   // Handle Vault complete
   const handleVaultComplete = () => {
-    if (completeLevelMutation.data?.isVaultCompleted) {
+    if (completeLevelAction.result.data?.isVaultCompleted) {
       setShowVaultCompletionDialog(true)
     }
   }
@@ -154,12 +148,14 @@ export default function SpikeVaultGame({
     }
 
     if (
-      (completeLevelMutation.data && completeLevelMutation.data.level) ||
+      (completeLevelAction.result.data &&
+        completeLevelAction.result.data.level) ||
       initialLevel
     ) {
       setGameState(
         resetLevel(
-          completeLevelMutation.data?.level?.levelData ?? initialLevel.levelData
+          completeLevelAction.result.data?.level?.levelData ??
+            initialLevel.levelData
         )
       )
     }
@@ -175,12 +171,12 @@ export default function SpikeVaultGame({
 
   // Handle next level navigation
   const handleNextLevel = () => {
-    if (completeLevelMutation.data?.level) {
+    if (completeLevelAction.result.data?.level) {
       setGameState(
-        initializeGameState(completeLevelMutation.data.level!.levelData)
+        initializeGameState(completeLevelAction.result.data.level!.levelData)
       )
-      setLevelNumber(completeLevelMutation.data.level!.levelNumber)
-      setLevelId(completeLevelMutation.data.level!.id)
+      setLevelNumber(completeLevelAction.result.data.level!.levelNumber)
+      setLevelId(completeLevelAction.result.data.level!.id)
     }
 
     setShowCompletionDialog(false)
@@ -239,25 +235,29 @@ export default function SpikeVaultGame({
       {/* Level completion dialog */}
       <LevelCompletionDialog
         isOpen={showCompletionDialog}
-        isVaultComplete={completeLevelMutation.data?.isVaultCompleted}
+        isVaultComplete={completeLevelAction.result.data?.isVaultCompleted}
         onNextLevel={handleNextLevel}
         onReplayLevel={handleReplayLevel}
         stats={stats}
         mode="spikeVault"
         submitLevelState={{
-          pending: completeLevelMutation.isPending,
-          error: completeLevelMutation.error,
+          pending: completeLevelAction.isPending,
+          error:
+            completeLevelAction.result.validationErrors?.stats?.time
+              ?._errors?.[0] ?? null,
         }}
         updateLevelState={
           isReplay
             ? {
-                pending: updateLevelMutation.isPending,
-                error: updateLevelMutation.error,
+                pending: updateLevelAction.isPending,
+                error:
+                  updateLevelAction.result.validationErrors?.stats?.time
+                    ?._errors?.[0] ?? null,
               }
             : undefined
         }
-        onUpdateLevel={isReplay ? updateLevelMutation.mutate : null}
-        onSubmitRetry={completeLevelMutation.mutate}
+        onUpdateLevel={isReplay ? executeUpdateLevelAction : null}
+        onSubmitRetry={executeCompleteLevelAction}
       />
       {showVaultCompletionDialog && (
         <SpikeVaultCompletionDialog

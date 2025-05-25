@@ -1,4 +1,4 @@
-import { getEndlessRecords, refreshRecords } from "./actions"
+import { type EndlessRecordsParams, getEndlessRecords } from "./actions"
 import {
   withSessionValidatedPage,
   type ValidatedSession,
@@ -8,8 +8,9 @@ import RecordsPagination from "./(components)/RecordsPagination"
 import EmptyState from "./(components)/EmptyState"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { Play, RefreshCw, Terminal } from "lucide-react"
+import { Play, Terminal } from "lucide-react"
 import { type Metadata } from "next"
+import { RefreshButton } from "./(components)/RefreshButton"
 
 export const metadata: Metadata = {
   title: "Sokoverse | Endless Mode",
@@ -19,32 +20,28 @@ export const metadata: Metadata = {
 
 interface EndlessPageProps {
   session: ValidatedSession
-  searchParams: Promise<{
-    preset?: string
-    page?: string
-    sortBy?: string
-    sortOrder?: string
-  }>
+  searchParams: Promise<EndlessRecordsParams>
 }
 
 async function EndlessPage({ searchParams }: EndlessPageProps) {
   const awaitedSearchParams = await searchParams
 
-  const preset = awaitedSearchParams.preset
-  const page = awaitedSearchParams.page ? parseInt(awaitedSearchParams.page) : 1
-  const sortBy = awaitedSearchParams.sortBy || "completedAt"
-  const sortOrder =
-    awaitedSearchParams.sortOrder === "asc" ||
-    awaitedSearchParams.sortOrder === "desc"
-      ? awaitedSearchParams.sortOrder
-      : "desc"
+  const result = await getEndlessRecords(awaitedSearchParams)
 
-  const { records, pagination, count } = await getEndlessRecords({
-    preset,
-    page,
-    sortBy,
-    sortOrder,
-  })
+  if (!result) {
+    throw new Error("Failed to fetch records")
+  }
+
+  if (!result.data) {
+    throw new Error("Failed to fetch records")
+  }
+
+  if (result.serverError) {
+    throw new Error(result.serverError.message)
+  }
+
+  const { records, count, pagination, preset, sortBy, sortOrder } = result.data
+  const currentPage = pagination.currentPage
 
   const hasRecords = count > 0 && records.length > 0
 
@@ -83,26 +80,7 @@ async function EndlessPage({ searchParams }: EndlessPageProps) {
           </Link>
         </Button>
 
-        <div className="flex gap-2">
-          {hasRecords && (
-            <form
-              action={async () => {
-                "use server"
-                await refreshRecords()
-              }}
-            >
-              <Button
-                type="submit"
-                variant="outline"
-                size="icon"
-                className="pixelated-border"
-                aria-label="Refresh records"
-              >
-                <RefreshCw className="h-5 w-5" />
-              </Button>
-            </form>
-          )}
-        </div>
+        <div className="flex gap-2">{hasRecords && <RefreshButton />}</div>
       </div>
 
       {hasRecords ? (
@@ -113,7 +91,7 @@ async function EndlessPage({ searchParams }: EndlessPageProps) {
             currentSortBy={sortBy}
             currentSortOrder={sortOrder}
             count={count}
-            currentPage={page}
+            currentPage={currentPage}
           />
 
           {pagination.totalPages > 1 && (
