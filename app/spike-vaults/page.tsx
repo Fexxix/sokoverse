@@ -101,7 +101,7 @@ async function SpikeVaultsContent({ session }: SpikeVaultsPageProps) {
           </TabsContent>
         </Tabs>
       ) : (
-        <EmptyState existingVaultNames={vaults.map((vault) => vault.name)} />
+        <EmptyState />
       )}
     </>
   )
