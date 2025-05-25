@@ -3,13 +3,7 @@
 import { Vault } from "lucide-react"
 import CreateSpikeVaultDialog from "./CreateSpikeVaultDialog"
 
-interface EmptyStateProps {
-  existingVaultNames?: string[]
-}
-
-export default function EmptyState({
-  existingVaultNames = [],
-}: EmptyStateProps) {
+export default function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4 border-2 pixelated-border rounded-lg bg-background/50 text-center">
       <div className="mb-6 p-4 bg-primary/10 rounded-full">
@@ -26,7 +20,7 @@ export default function EmptyState({
         solved.
       </p>
 
-      <CreateSpikeVaultDialog existingVaultNames={existingVaultNames} />
+      <CreateSpikeVaultDialog />
     </div>
   )
 }
