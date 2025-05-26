@@ -91,11 +91,11 @@ export type SpriteThemesKeyType = keyof typeof spriteMap.themes
  * @param delay - The delay in milliseconds
  * @returns A throttled version of the function
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => void>(
   func: T,
   delay: number
 ): (...args: Parameters<T>) => void {
-  let timeoutId: NodeJS.Timeout | null = null
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
   let lastExecTime = 0
 
   return (...args: Parameters<T>) => {
@@ -105,7 +105,7 @@ export function throttle<T extends (...args: any[]) => any>(
       func(...args)
       lastExecTime = currentTime
     } else {
-      if (timeoutId) {
+      if (timeoutId !== null) {
         clearTimeout(timeoutId)
       }
       timeoutId = setTimeout(() => {
