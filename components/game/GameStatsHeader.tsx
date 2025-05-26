@@ -41,6 +41,7 @@ export function GameStatsHeader({
   return (
     <TooltipProvider delayDuration={300}>
       <div
+        id="game-stats-header"
         className={cn(
           "w-full max-w-md bg-background/80 border border-primary/20 rounded-lg px-4 py-2",
           "flex items-center justify-between font-mono text-sm text-primary",
