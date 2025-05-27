@@ -135,12 +135,19 @@ export const saveSettings = authActionClient
 
     const firstVisit = !userEndlessData
 
-    await db
-      .update(endlessUserData)
-      .set({
+    if (firstVisit) {
+      await db.insert(endlessUserData).values({
+        userId: user.id,
         settings,
       })
-      .where(eq(endlessUserData.userId, user.id))
+    } else {
+      await db
+        .update(endlessUserData)
+        .set({
+          settings,
+        })
+        .where(eq(endlessUserData.userId, user.id))
+    }
 
     if (firstVisit) {
       await generateEndlessLevel(undefined)
