@@ -13,6 +13,10 @@ import {
   ChromeIcon as Google,
   UserIcon as Anonymous,
   Loader2,
+  Rocket,
+  Clock,
+  AlertTriangle,
+  Lock,
 } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
@@ -38,7 +42,7 @@ const AuthDialog: React.FC<AuthDialogProps> = ({ open, onOpenChange }) => {
       toast({
         title: "Playing as guest",
         description:
-          "Your progress will be saved for 48 hours. Sign up to keep it permanently!",
+          "Your progress will be saved for 2 weeks. Sign up to keep it permanently!",
         duration: 6000,
       })
 
@@ -65,23 +69,50 @@ const AuthDialog: React.FC<AuthDialogProps> = ({ open, onOpenChange }) => {
         </DialogHeader>
 
         <div className="space-y-6">
-          <div className="text-center font-mono text-sm text-primary/70 space-y-2">
-            <p>🎭 Psst! Choose your adventure wisely, brave pixel pusher!</p>
-            <p>🚀 Both options are as smooth as butter on a hot pixel!</p>
-            <p>
-              ⏳ Guest progress saved for 48 hours (it&spos;s magic, we swear!)
-            </p>
-            <p>
-              🚨 But beware! If you log out, your progress vanishes into the
-              digital void!
-            </p>
-            <p>
-              🔒 For eternal glory (and saved progress), consider the Google
-              option!
-            </p>
-            <p>
-              🎯 Remember: You can always level up to a permanent account later!
-            </p>
+          <div className="space-y-4">
+            <div className="text-primary/90 font-semibold text-center flex items-center justify-center gap-2">
+              Choose your adventure wisely, brave pixel pusher!
+            </div>
+
+            <div className="bg-primary/5 p-4 rounded border border-primary/20">
+              <div className="text-sm font-semibold text-primary mb-3 flex items-center justify-center gap-2">
+                <Rocket className="w-4 h-4" />
+                Quick Start Options:
+              </div>
+              <div className="space-y-3 text-sm font-mono">
+                <div className="flex items-start gap-3">
+                  <Clock className="w-3 h-3 mt-0.5 text-green-400" />
+                  <div>
+                    <span className="text-primary font-semibold">
+                      Guest Mode:
+                    </span>{" "}
+                    Progress saved for 2 weeks
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Lock className="w-3 h-3 mt-0.5 text-blue-400" />
+                  <div>
+                    <span className="text-primary font-semibold">
+                      Google Account:
+                    </span>{" "}
+                    Permanent progress & sharing
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-amber-500/10 p-3 rounded border border-amber-500/30">
+              <div className="text-xs font-mono space-y-2">
+                <div className="flex items-center gap-2 text-amber-400">
+                  <AlertTriangle className="w-3 h-3" />
+                  <span className="font-semibold">Guest Mode Warning:</span>
+                </div>
+                <div className="text-amber-300">
+                  Logging out will permanently delete your progress. You can
+                  upgrade to a permanent account anytime!
+                </div>
+              </div>
+            </div>
           </div>
           <div className="space-y-4">
             <GoogleSignInWrapper isSigningIn={isSigningIn}>
