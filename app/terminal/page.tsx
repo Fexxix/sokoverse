@@ -164,7 +164,7 @@ export default function TerminalPage() {
                 <div>
                   Powered by{" "}
                   <span className="text-primary font-semibold">
-                    DeepMind's Boxoban dataset
+                    DeepMind&apos;s Boxoban dataset
                   </span>
                   , featuring over{" "}
                   <span className="text-primary font-semibold">
@@ -184,14 +184,14 @@ export default function TerminalPage() {
                       solve
                     </li>
                     <li>
-                      Once solved, it's{" "}
+                      Once solved, it&apos;s{" "}
                       <span className="text-primary">
                         permanently completed
                       </span>{" "}
                       for everyone
                     </li>
                     <li>
-                      Can't solve it?{" "}
+                      Can&apos;t solve it?{" "}
                       <span className="text-primary">Discard</span> it for
                       others to try
                     </li>
