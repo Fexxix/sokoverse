@@ -86,6 +86,43 @@ export const endlessLevels = pgTable("endless_levels", {
   completedAt: timestamp("completed_at").defaultNow(),
 })
 
+export const boxobanLevels = pgTable("boxoban_levels", {
+  levelId: text("level_id").primaryKey(), // e.g., "medium-0-420"
+  category: text("category").notNull(), // "medium" | "hard" | "unfiltered"
+  fileNumber: integer("file_number").notNull(),
+  levelNumber: integer("level_number").notNull(),
+  assignedTo: integer("assigned_to").references(() => userTable.id),
+  status: text("status").notNull().default("available"), // 'available' | 'assigned' | 'solved'
+  updatedAt: timestamp("updated_at").defaultNow(),
+})
+
+export const boxobanGlobalProgress = pgTable("boxoban_global_progress", {
+  category: text("category").primaryKey(), // e.g., "medium"
+  totalLevels: integer("total_levels").notNull(), // e.g., 450000
+  solvedLevels: integer("solved_levels").default(0),
+  discardedLevels: integer("discarded_levels").default(0),
+  updatedAt: timestamp("updated_at").defaultNow(),
+})
+
+export const boxobanUserData = pgTable("boxoban_user_data", {
+  userId: integer("user_id")
+    .references(() => userTable.id)
+    .primaryKey(),
+
+  currentLevelId: text("current_level_id").references(
+    () => boxobanLevels.levelId
+  ),
+
+  mode: text("mode", { enum: ["medium", "hard", "unfiltered"] }).notNull(),
+
+  mediumSolved: integer("medium_solved").default(0),
+  hardSolved: integer("hard_solved").default(0),
+  unfilteredSolved: integer("unfiltered_solved").default(0),
+  totalSolved: integer("total_solved").default(0),
+
+  updatedAt: timestamp("updated_at").defaultNow(),
+})
+
 // Relations
 export const userRelations = relations(userTable, ({ many, one }) => ({
   spikeVaults: many(spikeVaults),
@@ -133,9 +170,35 @@ export const endlessLevelsRelations = relations(endlessLevels, ({ one }) => ({
   }),
 }))
 
+export const boxobanLevelsRelations = relations(boxobanLevels, ({ one }) => ({
+  assignedUser: one(userTable, {
+    fields: [boxobanLevels.assignedTo],
+    references: [userTable.id],
+  }),
+}))
+
+export const boxobanUserDataRelations = relations(
+  boxobanUserData,
+  ({ one }) => ({
+    user: one(userTable, {
+      fields: [boxobanUserData.userId],
+      references: [userTable.id],
+    }),
+    currentLevel: one(boxobanLevels, {
+      fields: [boxobanUserData.currentLevelId],
+      references: [boxobanLevels.levelId],
+    }),
+  })
+)
+
 export type User = InferSelectModel<typeof userTable>
 export type Session = InferSelectModel<typeof sessionTable>
 export type SpikeVault = InferSelectModel<typeof spikeVaults>
 export type SpikeVaultLevel = InferSelectModel<typeof spikeVaultLevels>
 export type EndlessLevel = InferSelectModel<typeof endlessLevels>
 export type EndlessUserData = InferSelectModel<typeof endlessUserData>
+export type BoxobanLevel = InferSelectModel<typeof boxobanLevels>
+export type BoxobanGlobalProgress = InferSelectModel<
+  typeof boxobanGlobalProgress
+>
+export type BoxobanUserData = InferSelectModel<typeof boxobanUserData>
