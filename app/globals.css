@@ -146,8 +146,9 @@
 }
 
 .font-mono {
-  font-family: var(--font-vt323);
+  font-family: var(--font-jersey-10);
   font-size: larger;
+  letter-spacing: 0.2ch;
 }
 
 /* Pixelated border effect */
