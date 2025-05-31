@@ -160,7 +160,7 @@ export const completeSpikeVaultLevel = authActionClient
               // revalidate spike vault cache
               revalidateTag(`${user.id}:spike-vaults`)
               revalidateTag(`${user.id}:spike-vaults:${vault.slug}`)
-              revalidateTag(`${user.id}:spike-vaults:${vault.slug}:levels`)
+              revalidateTag(`${user.id}:spike-vaults:${vault.id}:levels`)
 
               // If the next level doesn't exist, create it
               if (!nextLevel) {
