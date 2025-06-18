@@ -1,19 +1,18 @@
 "use server"
 
-import { generateSpikeVaultLevel } from "@/lib/server/auto-sokoban"
-import { withSessionValidated } from "@/lib/server/auth/with-session-validated"
 import { db } from "@/lib/server/db"
-import {
-  spikeVaults,
-  spikeVaultLevels,
-  type User,
-  type SpikeVault,
-} from "@/lib/server/db/schema"
-import { eq, asc, and } from "drizzle-orm"
-import { revalidatePath } from "next/cache"
+import { spikeVaults } from "@/lib/server/db/schema"
+import { eq, and } from "drizzle-orm"
+import { revalidateTag } from "next/cache"
 import "server-only"
 import { withTryCatch } from "@/lib/common/utils"
 import { isNeonDbError } from "@/lib/server/db/errors"
+import { ActionError, authActionClient } from "@/lib/server/safe-action"
+import { createSpikeVaultSchema, editSpikeVaultSchema } from "./schema"
+import { generateVaultData } from "@/lib/server/gemini/generate-vault-data"
+import { z } from "zod"
+import { returnValidationErrors } from "next-safe-action"
+import { createNextSpikeVaultLevel } from "./common"
 
 /**
  * Create a URL-friendly slug from a name
@@ -36,171 +35,173 @@ function generateRandomSeed(): string {
   return (Math.floor(Math.random() * 9000000000) + 1000000000).toString()
 }
 
-/**
- * Get all Spike Vaults for the current user
- */
-export const getSpikeVaults = withSessionValidated(async ({ user }) => {
-  try {
-    const userVaults = await db
-      .select()
-      .from(spikeVaults)
-      .where(eq(spikeVaults.userId, user.id))
-      .orderBy(asc(spikeVaults.createdAt))
-
-    return userVaults
-  } catch (error) {
-    console.error("Error fetching spike vaults:", error)
-    throw new Error("Failed to fetch spike vaults")
-  }
+const completeVaultDataSchema = z.object({
+  name: z.string().min(3).max(50),
+  description: z.string().max(200),
+  depthGoal: z.coerce.number().min(20),
 })
 
 /**
  * Create a new Spike Vault
  */
-export const createSpikeVault = withSessionValidated(
-  async (
-    { user },
-    {
-      name,
-      depthGoal,
-      description,
-    }: {
-      name: string
-      depthGoal: number
-      description?: string
+export const createSpikeVault = authActionClient
+  .metadata({
+    actionName: "createSpikeVault",
+  })
+  .schema(createSpikeVaultSchema)
+  .action(async ({ parsedInput, ctx }) => {
+    const { name, depthGoal, description } = parsedInput
+    const { user } = ctx
+
+    const generateCompleteVaultDataResult = await withTryCatch(
+      generateVaultData({
+        name,
+        description,
+        depthGoal,
+      })
+    )
+
+    if (generateCompleteVaultDataResult.status === "error") {
+      console.error(
+        "Error generating complete vault data:",
+        generateCompleteVaultDataResult.error
+      )
+      throw new Error("Failed to generate vault data")
     }
-  ) => {
-    // Validate inputs
-    if (!name || name.trim() === "") {
-      throw new Error("Vault name is required")
+
+    const completeVaultDataParseResult = completeVaultDataSchema.safeParse(
+      JSON.parse(generateCompleteVaultDataResult.data ?? "{}")
+    )
+
+    if (!completeVaultDataParseResult.success) {
+      console.error(
+        "Error parsing complete vault data:",
+        completeVaultDataParseResult.error
+      )
+      throw new Error("Failed to parse vault data")
     }
 
-    if (!depthGoal || depthGoal < 20) {
-      throw new Error("Depth goal must be at least 20")
-    }
+    const completeVaultData = completeVaultDataParseResult.data
 
-    try {
-      // Check if a vault with this name already exists for this user
-      const existingVaults = await db
-        .select({ name: spikeVaults.name })
-        .from(spikeVaults)
-        .where(eq(spikeVaults.userId, user.id))
+    // Generate slug from name
+    const finalSlug = createSlugFromName(completeVaultData.name.trim())
 
-      const existingNames = existingVaults.map((v) => v.name)
+    // Generate a random seed
+    const finalSeed = generateRandomSeed()
 
-      if (existingNames.includes(name.trim())) {
-        throw new Error(
-          "A vault with this name already exists. Please choose a different name."
-        )
-      }
-
-      // Generate slug from name
-      const finalSlug = createSlugFromName(name.trim())
-
-      // Generate a random seed
-      const finalSeed = generateRandomSeed()
-
-      // Insert new vault
-      const [newVault] = await db
+    // Insert new vault
+    const vaultInsertionResult = await withTryCatch(
+      db
         .insert(spikeVaults)
         .values({
           userId: user.id,
-          name: name.trim(),
+          name: completeVaultData.name.trim(),
           slug: finalSlug,
           seed: finalSeed,
-          description: description?.trim(),
-          depthGoal,
+          description: completeVaultData.description?.trim(),
+          depthGoal: completeVaultData.depthGoal,
           currentDepth: 0,
           status: "in_progress",
           createdAt: new Date(),
         })
         .returning()
+    )
 
-      await createNextSpikeVaultLevel({ user, vault: newVault })
-
-      // Revalidate the spike vaults page to show the new vault
-      revalidatePath("/spike-vaults")
-
-      return newVault
-    } catch (error) {
-      console.error("Error creating spike vault:", error)
-      if (error instanceof Error) {
-        throw error
+    if (vaultInsertionResult.status === "error") {
+      if (
+        isNeonDbError(vaultInsertionResult.error) &&
+        vaultInsertionResult.error.code === "23505"
+      ) {
+        // if original name is nullish its the user's fault
+        if (name) {
+          returnValidationErrors(createSpikeVaultSchema, {
+            name: {
+              _errors: ["A vault with this name already exists"],
+            },
+          })
+        }
+        // if original name is not nullish its our fault (gemini created a duplicate by chance)
+        else {
+          console.log({ completeVaultData })
+          throw new ActionError(
+            "It looks like we generated a duplicate vault name. Please try again, it shouldn't happen twice unless you are really, really, really unlucky."
+          )
+        }
+      } else {
+        console.error(
+          "Error inserting spike vault:",
+          vaultInsertionResult.error
+        )
+        throw new Error("Failed to insert spike vault")
       }
-      throw new Error("Failed to create spike vault")
     }
-  }
-)
+
+    const [newVault] = vaultInsertionResult.data
+
+    await createNextSpikeVaultLevel({ userId: user.id, vault: newVault })
+
+    // Revalidate the spike vaults cache to show the new vault
+    revalidateTag(`${user.id}:spike-vaults`)
+
+    return newVault
+  })
 
 /**
  * Delete a Spike Vault
  */
-export const deleteSpikeVault = withSessionValidated(
-  async ({ user }, { vaultId }: { vaultId: string }) => {
-    if (!vaultId) {
-      throw new Error("Vault ID is required")
-    }
+export const deleteSpikeVault = authActionClient
+  .metadata({ actionName: "deleteSpikeVault" })
+  .schema(
+    z.object({
+      vaultId: z.string().uuid(),
+    })
+  )
+  .action(async ({ parsedInput, ctx }) => {
+    const { vaultId } = parsedInput
+    const { user } = ctx
 
-    try {
-      // Check if the vault exists and belongs to the user
-      const [vault] = await db
+    // Check if the vault exists and belongs to the user
+    const queryResult = await withTryCatch(
+      db
         .select()
         .from(spikeVaults)
         .where(
           and(eq(spikeVaults.id, vaultId), eq(spikeVaults.userId, user.id))
         )
         .limit(1)
+    )
 
-      if (!vault) {
-        throw new Error("Spike Vault not found or doesn't belong to you")
-      }
-
-      // Delete all levels associated with this vault
-      await db
-        .delete(spikeVaultLevels)
-        .where(eq(spikeVaultLevels.spikeVaultId, vaultId))
-
-      // Delete the vault
-      await db.delete(spikeVaults).where(eq(spikeVaults.id, vaultId))
-
-      // Revalidate the spike vaults page
-      revalidatePath("/spike-vaults")
-
-      return { success: true }
-    } catch (error) {
-      console.error("Error deleting spike vault:", error)
-      throw error instanceof Error
-        ? error
-        : new Error("Failed to delete spike vault")
+    if (queryResult.status === "error") {
+      console.error("Error fetching spike vault:", queryResult.error)
+      throw new Error("Failed to fetch spike vault")
     }
-  }
-)
+
+    const [vault] = queryResult.data
+
+    if (!vault) {
+      throw new Error("Spike Vault not found or doesn't belong to you")
+    }
+
+    // Delete the vault
+    await db
+      .update(spikeVaults)
+      .set({ deleted: true })
+      .where(eq(spikeVaults.id, vaultId))
+
+    // Revalidate the spike vaults cache
+    revalidateTag(`${user.id}:spike-vaults`)
+    revalidateTag(`${user.id}:spike-vaults:${vault.slug}`)
+  })
 
 /**
  * Edit a Spike Vault
  */
-export const editSpikeVault = withSessionValidated(
-  async (
-    { user },
-    {
-      vaultId,
-      newVaultDepth,
-      newVaultDescription,
-      newVaultName,
-    }: {
-      vaultId: string
-      newVaultName?: string
-      newVaultDepth?: string
-      newVaultDescription?: string
-    }
-  ) => {
-    if (!vaultId) {
-      throw new Error("Vault ID is required")
-    }
-
-    if (!newVaultName && !newVaultDepth && !newVaultDescription) {
-      throw new Error("No changes to update")
-    }
+export const editSpikeVault = authActionClient
+  .metadata({ actionName: "editSpikeVault" })
+  .schema(editSpikeVaultSchema)
+  .action(async ({ parsedInput, ctx }) => {
+    const { vaultId, depthGoal, name, description } = parsedInput
+    const { user } = ctx
 
     const queryResult = await withTryCatch(
       db
@@ -223,64 +224,59 @@ export const editSpikeVault = withSessionValidated(
       throw new Error("Spike Vault not found or doesn't belong to you")
     }
 
-    newVaultName = newVaultName?.trim()
-    newVaultDepth = newVaultDepth?.trim()
-    newVaultDescription = newVaultDescription?.trim()
+    const isCompleted = vault.status === "completed"
 
-    if (newVaultName) {
-      if (newVaultName === "") {
-        throw new Error("New name cannot be empty")
-      }
-
-      if (newVaultName === vault.name) {
-        throw new Error("New name is the same as the current name")
-      }
-
-      vault.name = newVaultName
-      vault.slug = createSlugFromName(newVaultName)
+    if (isCompleted) {
+      throw new Error("Cannot edit a completed vault")
     }
 
-    if (newVaultDepth) {
-      if (newVaultDepth === "") {
-        throw new Error("New depth goal cannot be empty")
+    if (name) {
+      if (name === vault.name) {
+        returnValidationErrors(editSpikeVaultSchema, {
+          name: {
+            _errors: ["New name is the same as the current name"],
+          },
+        })
       }
 
-      const depthGoal = Number(newVaultDepth)
+      vault.name = name
+      vault.slug = createSlugFromName(name)
+    }
 
-      if (Number.isNaN(depthGoal)) {
-        throw new Error("Depth goal must be a number")
-      }
-
-      if (depthGoal < 20) {
-        throw new Error("Depth goal must be at least 20")
-      }
-
+    if (depthGoal) {
       if (depthGoal === vault.depthGoal) {
-        throw new Error("New depth goal is the same as the current depth goal")
+        returnValidationErrors(editSpikeVaultSchema, {
+          depthGoal: {
+            _errors: ["New depth goal is the same as the current depth goal"],
+          },
+        })
       }
 
-      if (depthGoal < vault.currentDepth! + 1) {
-        throw new Error(
-          "Depth goal cannot be less than number of levels already generated"
-        )
+      const currentLevelsInVault = vault.currentDepth! + 1
+
+      if (depthGoal < currentLevelsInVault) {
+        returnValidationErrors(editSpikeVaultSchema, {
+          depthGoal: {
+            _errors: [
+              "Depth goal cannot be less than number of levels already generated",
+            ],
+          },
+        })
       }
 
       vault.depthGoal = depthGoal
     }
 
-    if (newVaultDescription) {
-      if (newVaultDescription === "") {
-        vault.description = null
-        return
+    if (description) {
+      if (description === vault.description) {
+        returnValidationErrors(editSpikeVaultSchema, {
+          description: {
+            _errors: ["New description is the same as the current description"],
+          },
+        })
       }
 
-      if (newVaultDescription === vault.description) {
-        throw new Error(
-          "New description is the same as the current description"
-        )
-      }
-
-      vault.description = newVaultDescription
+      vault.description = description
     }
 
     const updateResult = await withTryCatch(
@@ -292,47 +288,25 @@ export const editSpikeVault = withSessionValidated(
         isNeonDbError(updateResult.error) &&
         updateResult.error.code === "23505"
       ) {
-        throw new Error(
-          "A vault with this name already exists. Please choose or create a different name."
-        )
+        returnValidationErrors(editSpikeVaultSchema, {
+          name: {
+            _errors: ["A vault with this name already exists"],
+          },
+        })
       } else {
         console.error("Error updating spike vault:", updateResult.error)
         throw new Error("Failed to update spike vault")
       }
     }
 
-    // Revalidate the vaults page
-    revalidatePath(`/spike-vaults`)
+    console.log({ updateResult })
+
+    // Revalidate the vaults cache
+    revalidateTag(`${user.id}:spike-vaults`)
+    revalidateTag(`${user.id}:spike-vaults:${vault.slug}`)
+
     // Revalidate the vault page if the name changed
-    if (vault.name === newVaultName) {
+    if (vault.name === name) {
       return { slug: vault.slug }
     }
-  }
-)
-
-async function createNextSpikeVaultLevel({
-  user,
-  vault,
-}: {
-  user: User
-  vault: SpikeVault
-}) {
-  const data = await generateSpikeVaultLevel(
-    Number(vault.seed),
-    vault.currentDepth! + 1
-  )
-
-  const [nextLevel] = await db
-    .insert(spikeVaultLevels)
-    .values({
-      userId: user.id,
-      spikeVaultId: vault.id,
-      levelNumber: vault.currentDepth! + 1,
-      levelData: data.level,
-      completed: false,
-      createdAt: new Date(),
-    })
-    .returning()
-
-  return nextLevel
-}
+  })

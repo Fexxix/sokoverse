@@ -17,15 +17,20 @@ import { Play, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import PresetFilter from "./PresetFilter"
 import { useRouter } from "nextjs-toploader/app"
 import { usePathname } from "next/navigation"
-import { getEndlessRecords } from "../actions"
+import { getEndlessRecords, type EndlessRecordsParams } from "../actions"
+import { InferSafeActionFnResult } from "next-safe-action"
+
+type EndlessRecords = NonNullable<
+  InferSafeActionFnResult<typeof getEndlessRecords>["data"]
+>
 
 interface RecordsTableProps {
-  records: Awaited<ReturnType<typeof getEndlessRecords>>["records"]
-  currentPreset?: string
-  currentSortBy?: string
-  currentSortOrder?: string
-  count: number
-  currentPage: number
+  records: EndlessRecords["records"]
+  currentPreset?: EndlessRecordsParams["preset"]
+  currentSortBy?: EndlessRecordsParams["sortBy"]
+  currentSortOrder?: EndlessRecordsParams["sortOrder"]
+  count: EndlessRecords["count"]
+  currentPage: EndlessRecords["pagination"]["currentPage"]
 }
 
 const PAGE_SIZE = 10

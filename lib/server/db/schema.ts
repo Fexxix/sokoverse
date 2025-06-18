@@ -54,6 +54,7 @@ export const spikeVaults = pgTable(
     depthGoal: integer("depth_goal").notNull().default(20),
     currentDepth: integer("current_depth").default(0),
     status: text("status").notNull().default("in_progress"),
+    deleted: boolean("deleted").default(false),
     createdAt: timestamp("created_at").defaultNow(),
   },
   (table) => [unique("unique_user_slug").on(table.userId, table.slug)]

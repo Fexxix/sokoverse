@@ -1,19 +1,25 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { spriteMap, type SpriteThemesKeyType } from "@/lib/client/utils"
+import {
+  spriteMap,
+  type SpriteThemesKeyType,
+  throttle,
+} from "@/lib/client/utils"
 import { useTheme } from "next-themes"
 import { type GameState } from "@/lib/client/game-logic"
 import { useKeyboardControls } from "@/hooks/useGameHooks"
 
-const TILE_SIZE = 48
-const CANVAS_PADDING = 20
-const PLAYER_OFFSET_X = 4
-const PLAYER_WIDTH = 40
-const PLAYER_HEIGHT = 48
-const GOAL_OFFSET = 14
-const GOAL_SIZE = 20
+const MIN_TILE_SIZE = 32
+const BASE_TILE_SIZE = 48
+const CANVAS_PADDING = 40
+const PLAYER_OFFSET_X_RATIO = 4 / 48 // Convert to ratio for scaling
+const PLAYER_WIDTH_RATIO = 40 / 48
+const PLAYER_HEIGHT_RATIO = 48 / 48
+const GOAL_OFFSET_RATIO = 14 / 48
+const GOAL_SIZE_RATIO = 20 / 48
 const BORDER_COLOR = "#f75040"
+const VIEWPORT_MARGIN = 40 // Additional margin for breathing room
 
 export type AnimationFrame = {
   which: 0 | 1 | 2 // 1 and 2 are inbetween frames, 0 means initial state
@@ -45,6 +51,13 @@ export default function SokobanCanvasGameBoard({
     type: "default",
   })
 
+  // Responsive canvas state
+  const [canvasDimensions, setCanvasDimensions] = useState({
+    width: 800,
+    height: 600,
+    tileSize: BASE_TILE_SIZE,
+  })
+
   useKeyboardControls({
     gameState,
     onReset,
@@ -54,25 +67,83 @@ export default function SokobanCanvasGameBoard({
   })
 
   const isPlayerCell = (cell: string) => cell === "@" || cell === "+"
-  const levelWidth = grid[0].length * TILE_SIZE
-  const levelHeight = grid.length * TILE_SIZE
 
-  // Calculate offsets once when the component mounts or grid size changes
+  // Calculate responsive dimensions
+  const calculateCanvasDimensions = () => {
+    if (!grid.length || !grid[0]?.length) return
+
+    const gridCols = grid[0].length
+    const gridRows = grid.length
+
+    // Calculate available viewport space
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
+
+    // Dynamically measure component dimensions
+    const sidebarElement = document.getElementById(
+      "floating-game-controls-sidebar"
+    )
+    const headerElement = document.getElementById("game-stats-header")
+
+    const sidebarWidth = sidebarElement ? sidebarElement.offsetWidth + 32 : 80 // +32 for left-4 positioning
+    const headerHeight = headerElement ? headerElement.offsetHeight + 16 : 80 // +16 for gap
+
+    // Account for sidebar, header, and margins
+    const availableWidth = viewportWidth - sidebarWidth - VIEWPORT_MARGIN
+    const availableHeight = viewportHeight - headerHeight - VIEWPORT_MARGIN
+
+    // Calculate the maximum tile size that fits in available space
+    const maxTileSizeByWidth = (availableWidth - CANVAS_PADDING) / gridCols
+    const maxTileSizeByHeight = (availableHeight - CANVAS_PADDING) / gridRows
+
+    // Use the smaller of the two to ensure the level fits completely, but enforce minimum
+    const tileSize = Math.max(
+      MIN_TILE_SIZE,
+      Math.min(maxTileSizeByWidth, maxTileSizeByHeight, BASE_TILE_SIZE)
+    )
+
+    // Calculate final canvas dimensions
+    const canvasWidth = gridCols * tileSize + CANVAS_PADDING
+    const canvasHeight = gridRows * tileSize + CANVAS_PADDING
+
+    setCanvasDimensions({
+      width: getPixelPerfectDimension(Math.floor(canvasWidth)),
+      height: getPixelPerfectDimension(Math.floor(canvasHeight)),
+      tileSize: getPixelPerfectDimension(Math.floor(tileSize)),
+    })
+  }
+
+  // Calculate dimensions when grid changes or window resizes
+  useEffect(() => {
+    calculateCanvasDimensions()
+  }, [grid])
+
+  useEffect(() => {
+    const throttledResize = throttle(calculateCanvasDimensions, 100)
+
+    window.addEventListener("resize", throttledResize)
+    return () => window.removeEventListener("resize", throttledResize)
+  }, [calculateCanvasDimensions])
+
+  // Calculate offsets once when the component mounts or canvas dimensions change
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
+
+    const levelWidth = grid[0]?.length * canvasDimensions.tileSize || 0
+    const levelHeight = grid.length * canvasDimensions.tileSize
 
     offsetRef.current = {
       x: (canvas.width - levelWidth) / 2,
       y: (canvas.height - levelHeight) / 2,
     }
-  }, [levelWidth, levelHeight])
+  }, [grid, canvasDimensions])
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    canvasRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+    canvas.scrollIntoView({ behavior: "smooth", block: "center" })
 
     const ctx = canvas.getContext("2d")
     if (!ctx) return
@@ -90,7 +161,15 @@ export default function SokobanCanvasGameBoard({
 
       grid.forEach((row, y) => {
         row.forEach((cell, x) => {
-          drawFloorAndEdgeWallBorders(ctx, spriteSheet, grid, x, y, cell)
+          drawFloorAndEdgeWallBorders(
+            ctx,
+            spriteSheet,
+            grid,
+            x,
+            y,
+            cell,
+            canvasDimensions.tileSize
+          )
 
           const sprite = getSprite(
             cell,
@@ -100,6 +179,14 @@ export default function SokobanCanvasGameBoard({
           )
 
           if (sprite) {
+            // Calculate scaled dimensions
+            const tileSize = canvasDimensions.tileSize
+            const playerOffsetX = tileSize * PLAYER_OFFSET_X_RATIO
+            const playerWidth = tileSize * PLAYER_WIDTH_RATIO
+            const playerHeight = tileSize * PLAYER_HEIGHT_RATIO
+            const goalOffset = tileSize * GOAL_OFFSET_RATIO
+            const goalSize = tileSize * GOAL_SIZE_RATIO
+
             // Draw the sprite with the correct offset, player and goal have different offsets
             if (isPlayerCell(cell)) {
               ctx.drawImage(
@@ -108,10 +195,10 @@ export default function SokobanCanvasGameBoard({
                 sprite.y,
                 sprite.w,
                 sprite.h,
-                x * TILE_SIZE + PLAYER_OFFSET_X,
-                y * TILE_SIZE,
-                PLAYER_WIDTH,
-                PLAYER_HEIGHT
+                x * tileSize + playerOffsetX,
+                y * tileSize,
+                playerWidth,
+                playerHeight
               )
             } else if (cell === ".") {
               ctx.drawImage(
@@ -120,10 +207,10 @@ export default function SokobanCanvasGameBoard({
                 sprite.y,
                 sprite.w,
                 sprite.h,
-                x * TILE_SIZE + GOAL_OFFSET,
-                y * TILE_SIZE + GOAL_OFFSET,
-                GOAL_SIZE,
-                GOAL_SIZE
+                x * tileSize + goalOffset,
+                y * tileSize + goalOffset,
+                goalSize,
+                goalSize
               )
             } else {
               ctx.drawImage(
@@ -132,23 +219,23 @@ export default function SokobanCanvasGameBoard({
                 sprite.y,
                 sprite.w,
                 sprite.h,
-                x * TILE_SIZE,
-                y * TILE_SIZE,
-                TILE_SIZE,
-                TILE_SIZE
+                x * tileSize,
+                y * tileSize,
+                tileSize,
+                tileSize
               )
             }
           }
         })
       })
     }
-  }, [grid, movementDirection, animationFrame, theme])
+  }, [grid, movementDirection, animationFrame, theme, canvasDimensions])
 
   return (
     <canvas
       ref={canvasRef}
-      width={levelWidth + CANVAS_PADDING}
-      height={levelHeight + CANVAS_PADDING}
+      width={canvasDimensions.width}
+      height={canvasDimensions.height}
       className="relative z-50"
     />
   )
@@ -160,7 +247,8 @@ function drawFloorAndEdgeWallBorders(
   grid: string[][],
   x: number,
   y: number,
-  cell: string
+  cell: string,
+  tileSize: number
 ) {
   if (cell === "-")
     ctx.drawImage(
@@ -169,10 +257,10 @@ function drawFloorAndEdgeWallBorders(
       spriteMap.tiles.emptyTile.y,
       spriteMap.tiles.emptyTile.w,
       spriteMap.tiles.emptyTile.h,
-      x * TILE_SIZE,
-      y * TILE_SIZE,
-      TILE_SIZE,
-      TILE_SIZE
+      x * tileSize,
+      y * tileSize,
+      tileSize,
+      tileSize
     )
   else if (isEdgeWall(grid, x, y)) {
     ctx.drawImage(
@@ -181,10 +269,10 @@ function drawFloorAndEdgeWallBorders(
       spriteMap.tiles.floor.y,
       spriteMap.tiles.floor.w,
       spriteMap.tiles.floor.h,
-      x * TILE_SIZE,
-      y * TILE_SIZE,
-      TILE_SIZE,
-      TILE_SIZE
+      x * tileSize,
+      y * tileSize,
+      tileSize,
+      tileSize
     )
 
     // Get uncovered edges for the current tile
@@ -192,33 +280,33 @@ function drawFloorAndEdgeWallBorders(
 
     // Draw borders only on uncovered edges
     ctx.strokeStyle = BORDER_COLOR
-    ctx.lineWidth = 4
+    ctx.lineWidth = Math.max(2, tileSize / 12) // Scale line width with tile size
     ctx.lineCap = "round"
 
     uncoveredEdges.forEach((edge) => {
       switch (edge) {
         case "top":
           ctx.beginPath()
-          ctx.moveTo(x * TILE_SIZE, y * TILE_SIZE)
-          ctx.lineTo((x + 1) * TILE_SIZE, y * TILE_SIZE)
+          ctx.moveTo(x * tileSize, y * tileSize)
+          ctx.lineTo((x + 1) * tileSize, y * tileSize)
           ctx.stroke()
           break
         case "bottom":
           ctx.beginPath()
-          ctx.moveTo(x * TILE_SIZE, (y + 1) * TILE_SIZE)
-          ctx.lineTo((x + 1) * TILE_SIZE, (y + 1) * TILE_SIZE)
+          ctx.moveTo(x * tileSize, (y + 1) * tileSize)
+          ctx.lineTo((x + 1) * tileSize, (y + 1) * tileSize)
           ctx.stroke()
           break
         case "left":
           ctx.beginPath()
-          ctx.moveTo(x * TILE_SIZE, y * TILE_SIZE)
-          ctx.lineTo(x * TILE_SIZE, (y + 1) * TILE_SIZE)
+          ctx.moveTo(x * tileSize, y * tileSize)
+          ctx.lineTo(x * tileSize, (y + 1) * tileSize)
           ctx.stroke()
           break
         case "right":
           ctx.beginPath()
-          ctx.moveTo((x + 1) * TILE_SIZE, y * TILE_SIZE)
-          ctx.lineTo((x + 1) * TILE_SIZE, (y + 1) * TILE_SIZE)
+          ctx.moveTo((x + 1) * tileSize, y * tileSize)
+          ctx.lineTo((x + 1) * tileSize, (y + 1) * tileSize)
           ctx.stroke()
           break
       }
@@ -230,10 +318,10 @@ function drawFloorAndEdgeWallBorders(
       spriteMap.tiles.floor.y,
       spriteMap.tiles.floor.w,
       spriteMap.tiles.floor.h,
-      x * TILE_SIZE,
-      y * TILE_SIZE,
-      TILE_SIZE,
-      TILE_SIZE
+      x * tileSize,
+      y * tileSize,
+      tileSize,
+      tileSize
     )
 }
 
@@ -330,4 +418,9 @@ function getSprite(
     default:
       return null
   }
+}
+
+function getPixelPerfectDimension(num: number) {
+  if (num % 2 === 0 || num % 5 === 0) return num
+  else return num + 1
 }

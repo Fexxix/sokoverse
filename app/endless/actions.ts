@@ -1,32 +1,46 @@
 "use server"
 
-import { MIN_TIME_PER_MOVE, PAGE_SIZE } from "@/lib/common/constants"
+import {
+  ENDLESS_PRESET_CONFIG,
+  EndlessPreset,
+  MIN_TIME_PER_MOVE,
+  PAGE_SIZE,
+} from "@/lib/common/constants"
 import { signPayload } from "@/lib/server/auth/sign"
-import { withSessionValidated } from "@/lib/server/auth/with-session-validated"
 import { db } from "@/lib/server/db"
 import { endlessLevels } from "@/lib/server/db/schema"
+import { authActionClient } from "@/lib/server/safe-action"
 import { and, eq, sql, desc } from "drizzle-orm"
 import { type PgColumn } from "drizzle-orm/pg-core"
 import { revalidatePath } from "next/cache"
+import { z } from "zod"
+import { getEndlessLevelById } from "./queries"
+import { returnValidationErrors } from "next-safe-action"
+import { checkSolution } from "@/lib/server/check-solution"
 
-export const getEndlessRecords = withSessionValidated(
-  async (
-    { user },
-    {
-      preset,
-      page = 1,
-      sortBy = "completedAt",
-      sortOrder = "desc",
-    }: {
-      preset?: string
-      page?: number
-      sortBy?: string
-      sortOrder?: "asc" | "desc"
-    } = {}
-  ) => {
-    // Validate and sanitize inputs
-    const validPage = Math.max(1, page)
-    const offset = (validPage - 1) * PAGE_SIZE
+export type EndlessRecordsParams = z.infer<typeof endlessRecordsParamsSchema>
+
+const endlessRecordsParamsSchema = z.object({
+  preset: z
+    .enum(
+      Object.keys(ENDLESS_PRESET_CONFIG) as [EndlessPreset, ...EndlessPreset[]]
+    )
+    .optional(),
+  page: z.coerce.number().min(1).optional().default(1),
+  sortBy: z
+    .enum(["completedAt", "steps", "timeMs"])
+    .optional()
+    .default("completedAt"),
+  sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
+})
+
+export const getEndlessRecords = authActionClient
+  .metadata({ actionName: "getEndlessRecords" })
+  .schema(endlessRecordsParamsSchema)
+  .action(async ({ parsedInput, ctx }) => {
+    const { page, sortBy, sortOrder, preset } = parsedInput
+    const { user } = ctx
+    const offset = (page - 1) * PAGE_SIZE
 
     // Build the base query
     let baseQuery = and(
@@ -35,10 +49,7 @@ export const getEndlessRecords = withSessionValidated(
     )
 
     // Add preset filter if provided
-    if (
-      preset &&
-      ["casual", "balanced", "challenging", "extended"].includes(preset)
-    ) {
+    if (preset) {
       baseQuery = and(
         baseQuery,
         sql`${endlessLevels.setting}->>'preset' = ${preset}`
@@ -85,66 +96,41 @@ export const getEndlessRecords = withSessionValidated(
     return {
       records,
       count,
+      preset,
+      sortBy,
+      sortOrder,
       pagination: {
         totalRecords: Number(count),
         totalPages: Math.ceil(Number(count) / PAGE_SIZE),
-        currentPage: validPage,
+        currentPage: page,
         pageSize: PAGE_SIZE,
       },
     }
-  }
-)
+  })
 
-export const getEndlessLevelById = withSessionValidated(
-  async ({ user }, { id }: { id: string }) => {
-    if (!id) {
-      throw new Error("Level ID is required")
-    }
+export const refreshRecords = authActionClient
+  .metadata({ actionName: "refreshRecords" })
+  .action(async () => {
+    // Simply revalidate the path to refresh the data
+    revalidatePath("/endless")
+  })
 
-    const [level] = await db
-      .select()
-      .from(endlessLevels)
-      .where(and(eq(endlessLevels.id, id), eq(endlessLevels.userId, user.id)))
-      .limit(1)
-
-    if (!level) {
-      throw new Error("Level not found")
-    }
-
-    return level
-  }
-)
-
-export const refreshRecords = withSessionValidated(async () => {
-  // Simply revalidate the path to refresh the data
-  revalidatePath("/endless")
+const updateLevelParamsSchema = z.object({
+  levelId: z.string(),
+  stats: z.object({
+    steps: z.number().min(1),
+    time: z.number().min(MIN_TIME_PER_MOVE),
+  }),
+  moves: z.string(),
+  hash: z.string(),
 })
 
-export const updateLevel = withSessionValidated(
-  async (
-    { user },
-    {
-      levelId,
-      stats,
-      moves,
-      hash,
-    }: {
-      levelId: string
-      stats: { steps: number; time: number }
-      moves: string
-      hash: string
-    }
-  ) => {
-    if (
-      !levelId ||
-      !stats ||
-      stats.steps === 0 ||
-      stats.time === 0 ||
-      !moves ||
-      !hash
-    ) {
-      throw new Error("Invalid stats.")
-    }
+export const updateLevel = authActionClient
+  .metadata({ actionName: "updateLevel" })
+  .schema(updateLevelParamsSchema)
+  .action(async ({ parsedInput, ctx }) => {
+    const { levelId, stats, moves, hash } = parsedInput
+    const { user } = ctx
 
     //userId:levelId:steps:time:moves
     const payload = `${user.id}:${levelId}:${stats.steps}:${stats.time}:${moves}`
@@ -153,49 +139,43 @@ export const updateLevel = withSessionValidated(
 
     // check if hash is valid
     if (hash !== serverHash) {
-      throw new Error("Invalid hash.")
+      return returnValidationErrors(updateLevelParamsSchema, {
+        hash: {
+          _errors: ["Invalid hash."],
+        },
+      })
     }
 
-    const [levelToUpdate] = await db
-      .select()
-      .from(endlessLevels)
-      .where(and(eq(endlessLevels.id, levelId)))
-      .limit(1)
-
-    if (!levelToUpdate) {
-      throw new Error("Level not found.")
-    }
+    const levelToUpdate = await getEndlessLevelById({
+      userId: user.id,
+      levelId,
+    })
 
     // verify if solution is valid
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_SITE_URL}/api/check-solution/index`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          level: levelToUpdate.levelData.join("\n"),
-          solution: moves,
-        }),
-      }
-    )
-
-    if (!response.ok) {
-      throw new Error("Failed to verify solution.")
-    }
-
-    const { isValid } = await response.json()
+    const isValid = await checkSolution({
+      level: levelToUpdate.levelData.join("\n"),
+      solution: moves,
+    })
 
     if (!isValid) {
-      throw new Error("Invalid solution.")
+      return returnValidationErrors(updateLevelParamsSchema, {
+        moves: {
+          _errors: ["Invalid solution."],
+        },
+      })
     }
 
     // verify if time is valid
     const estimatedFastestTime = moves.length * MIN_TIME_PER_MOVE
 
     if (stats.time < estimatedFastestTime) {
-      throw new Error("Invalid time.")
+      return returnValidationErrors(updateLevelParamsSchema, {
+        stats: {
+          time: {
+            _errors: ["Invalid time."],
+          },
+        },
+      })
     }
 
     await db
@@ -205,5 +185,4 @@ export const updateLevel = withSessionValidated(
         timeMs: stats.time,
       })
       .where(eq(endlessLevels.id, levelId))
-  }
-)
+  })

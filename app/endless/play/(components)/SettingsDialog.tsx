@@ -28,13 +28,12 @@ import {
   type EndlessSettings,
 } from "@/lib/common/constants"
 import { saveSettings } from "@/app/endless/play/actions"
-import { useMutation } from "@tanstack/react-query"
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useAction } from "next-safe-action/hooks"
 
 // Level presets with performance indicators
 export const PRESET_LEVELS_WITH_DESCRIPTION = {
@@ -109,8 +108,7 @@ export function SettingsDialog({
     }
   }, [handleKeyDown])
 
-  const saveSettingsMutation = useMutation({
-    mutationFn: saveSettings,
+  const saveSettingsAction = useAction(saveSettings, {
     onSuccess: () => {
       toast({
         title: "Settings Saved",
@@ -131,12 +129,10 @@ export function SettingsDialog({
         })
       }
     },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to save settings",
-        variant: "destructive",
-      })
+    onError: ({ error }) => {
+      if (error.serverError) {
+        throw new Error(error.serverError.message)
+      }
     },
   })
 
@@ -169,7 +165,7 @@ export function SettingsDialog({
   }
 
   const handleSaveSettings = () => {
-    saveSettingsMutation.mutate({
+    saveSettingsAction.executeAsync({
       preset: selectedPreset,
       pushRestriction: false,
     })
@@ -187,33 +183,36 @@ export function SettingsDialog({
     setShowUnsavedChangesAlert(false)
   }
 
-  const TriggerWrapper = firstVisit ? Fragment : TooltipProvider
-
   return (
     <>
-      <Dialog open={showSettingsDialog} onOpenChange={handleDialogOpenChange}>
-        <DialogTrigger asChild>
-          <TriggerWrapper>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label="Game settings"
-                  disabled={isLoading}
-                >
-                  <Settings className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p className="font-mono">Game settings (X)</p>
-              </TooltipContent>
-            </Tooltip>
-          </TriggerWrapper>
-        </DialogTrigger>
+      <Dialog
+        open={showSettingsDialog}
+        onOpenChange={handleDialogOpenChange}
+        // doesn't open for some reason when modal is already false so we have this ugliness
+        {...(showSettingsDialog && saveSettingsAction.isPending
+          ? { modal: true }
+          : {})}
+      >
+        <Tooltip>
+          <DialogTrigger asChild>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="Game settings"
+                disabled={isLoading}
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+          </DialogTrigger>
+          <TooltipContent side={fromCompletionDialog ? "top" : "right"}>
+            <p className="font-mono">Game settings (X)</p>
+          </TooltipContent>
+        </Tooltip>
         <DialogContent
           className="bg-background border-primary my-4"
-          hideCloseButton={firstVisit}
+          hideCloseButton={firstVisit || saveSettingsAction.isPending}
         >
           <DialogHeader>
             <DialogTitle className="font-pixel text-primary">
@@ -280,14 +279,12 @@ export function SettingsDialog({
             <Button
               onClick={handleSaveSettings}
               disabled={
-                firstVisit
-                  ? false
-                  : !hasChanges || saveSettingsMutation.isPending
+                firstVisit ? false : !hasChanges || saveSettingsAction.isPending
               }
               className="font-pixel pixelated-border flex items-center"
             >
-              {saveSettingsMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spinW" />
+              {saveSettingsAction.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Save className="h-4 w-4" />
               )}{" "}

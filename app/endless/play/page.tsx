@@ -5,20 +5,30 @@ import {
   type ValidatedSession,
 } from "@/lib/server/auth/with-session-validated"
 import { getUserEndlessData } from "./queries"
+import { InferSafeActionFnResult } from "next-safe-action"
+
+type GenerateEndlessLevelResult = InferSafeActionFnResult<
+  typeof generateEndlessLevel
+>["data"]
 
 async function EndlessChallengePage({
   session,
 }: {
   session: ValidatedSession
 }) {
-  let initialLevel: Awaited<ReturnType<typeof generateEndlessLevel>> | null =
-    null
+  let initialLevel: GenerateEndlessLevelResult = undefined
 
   const userEndlessData = await getUserEndlessData(session.user.id)
   const firstVisit = !userEndlessData
 
   if (!firstVisit && !!userEndlessData?.settings) {
-    initialLevel = await generateEndlessLevel()
+    const result = await generateEndlessLevel(undefined)
+
+    if (result?.serverError && result.serverError.type === "action-error") {
+      throw new Error(result.serverError.message)
+    }
+
+    initialLevel = result?.data
   }
 
   return (

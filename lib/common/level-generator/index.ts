@@ -42,7 +42,7 @@ export async function generateSokobanLevelServerSide(
       height = 9,
       boxes = 3,
       minWalls = 13,
-      attempts = 5000,
+      attempts = 100_000,
       seed = Date.now(),
       initialPosition,
     } = parameters

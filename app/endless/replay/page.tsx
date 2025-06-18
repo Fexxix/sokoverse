@@ -1,10 +1,10 @@
 import { type Metadata } from "next"
-import { getEndlessLevelById } from "../actions"
 import EndlessReplayGame from "./EndlessReplayGame"
 import {
   withSessionValidatedPage,
   type ValidatedSession,
 } from "@/lib/server/auth/with-session-validated"
+import { getEndlessLevelById } from "../queries"
 
 export const metadata: Metadata = {
   title: "Sokoverse | Endless Mode | Replay",
@@ -17,7 +17,7 @@ interface EndlessReplayPageProps {
 }
 
 async function EndlessReplayPage({
-  session: _,
+  session,
   searchParams: searchParamsPromise,
 }: EndlessReplayPageProps) {
   const id = (await searchParamsPromise).id
@@ -34,7 +34,10 @@ async function EndlessReplayPage({
   }
 
   try {
-    const level = await getEndlessLevelById({ id })
+    const level = await getEndlessLevelById({
+      userId: session.user.id,
+      levelId: id,
+    })
 
     return (
       <EndlessReplayGame
