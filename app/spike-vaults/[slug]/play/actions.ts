@@ -12,6 +12,7 @@ import { z } from "zod"
 import { withTryCatch } from "@/lib/common/utils"
 import { checkSolution } from "@/lib/server/check-solution"
 import { returnValidationErrors } from "next-safe-action"
+import { after } from "next/server"
 
 const completeSpikeVaultLevelParamsSchema = z.object({
   levelId: z.string(),
@@ -157,11 +158,6 @@ export const completeSpikeVaultLevel = authActionClient
                 )
                 .limit(1)
 
-              // revalidate spike vault cache
-              revalidateTag(`${user.id}:spike-vaults`)
-              revalidateTag(`${user.id}:spike-vaults:${vault.slug}`)
-              revalidateTag(`${user.id}:spike-vaults:${vault.id}:levels`)
-
               // If the next level doesn't exist, create it
               if (!nextLevel) {
                 nextLevel = await createNextSpikeVaultLevel({
@@ -178,6 +174,13 @@ export const completeSpikeVaultLevel = authActionClient
           ]
         : []),
     ])
+
+    // revalidate spike vault cache
+    after(() => {
+      revalidateTag(`${user.id}:spike-vaults`)
+      revalidateTag(`${user.id}:spike-vaults:${vault.slug}`)
+      revalidateTag(`${user.id}:spike-vaults:${vault.id}:levels`)
+    })
 
     // check if the vault is completed
     if (isVaultCompleted) {

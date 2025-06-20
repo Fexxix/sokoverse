@@ -128,6 +128,7 @@ export const createSpikeVault = authActionClient
           )
         }
       } else {
+        console.log("Error name", vaultInsertionResult.error.constructor.name)
         console.error(
           "Error inserting spike vault:",
           vaultInsertionResult.error
