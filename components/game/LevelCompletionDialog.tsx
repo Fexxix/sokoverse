@@ -291,8 +291,35 @@ function LevelCompletionDialogSuccesState({
               </Button>
             )}
           </div>
+          <Button variant="link">
+            <Link href={getLinkFromMode(mode)}>
+              Return to {getNameFromMode(mode)}
+            </Link>
+          </Button>
         </div>
       </div>
     </>
   )
+}
+
+function getLinkFromMode(mode: LevelCompletionDialogProps["mode"]) {
+  switch (mode) {
+    case "endless":
+      return "/endless"
+    case "spikeVault":
+      return "/spike-vault"
+    case "boxoban":
+      return "/boxoban"
+  }
+}
+
+function getNameFromMode(mode: LevelCompletionDialogProps["mode"]) {
+  switch (mode) {
+    case "endless":
+      return "Endless"
+    case "spikeVault":
+      return "Spike Vault"
+    case "boxoban":
+      return "Boxoban"
+  }
 }
