@@ -86,7 +86,7 @@ const AuthDialog: React.FC<AuthDialogProps> = ({ open, onOpenChange }) => {
                     <span className="text-primary font-semibold">
                       Guest Mode:
                     </span>{" "}
-                    Progress saved for 2 weeks
+                    Progress saved for 2 days
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -150,7 +150,7 @@ const AuthDialog: React.FC<AuthDialogProps> = ({ open, onOpenChange }) => {
             className="font-pixel"
             disabled={isSigningIn}
           >
-            MAYBE LATER
+            BACK
           </Button>
         </DialogFooter>
       </DialogContent>
