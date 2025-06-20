@@ -1,5 +1,5 @@
 import "./globals.css"
-import { Press_Start_2P, VT323 } from "next/font/google"
+import { Press_Start_2P, Jersey_10 } from "next/font/google"
 import type React from "react"
 import Providers from "./providers"
 import PixelatedBackground from "@/components/PixelatedBackground"
@@ -20,10 +20,10 @@ const pressStart2P = Press_Start_2P({
   variable: "--font-press-start-2p",
 })
 
-const vt323 = VT323({
+const jersey10 = Jersey_10({
   weight: "400",
   subsets: ["latin"],
-  variable: "--font-vt323",
+  variable: "--font-jersey-10",
 })
 
 export const metadata = {
@@ -42,7 +42,7 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${pressStart2P.variable} ${vt323.variable} font-sans bg-background text-foreground`}
+        className={`${pressStart2P.variable} ${jersey10.variable} font-sans bg-background text-foreground`}
       >
         <PreloadResources />
         <NextTopLoader showSpinner={false} />

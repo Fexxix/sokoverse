@@ -33,7 +33,7 @@ interface LevelCompletionDialogProps {
   onUpdateLevel?: (() => void) | null
   onSubmitRetry?: () => void
   stats: GameStats
-  mode: "endless" | "spikeVault"
+  mode: "endless" | "spikeVault" | "boxoban"
   settingsDialog?: JSX.Element
   submitLevelState?: AsyncState
   updateLevelState?: AsyncState

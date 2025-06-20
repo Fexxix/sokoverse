@@ -106,10 +106,12 @@ export default function SokobanCanvasGameBoard({
     const canvasWidth = gridCols * tileSize + CANVAS_PADDING
     const canvasHeight = gridRows * tileSize + CANVAS_PADDING
 
+    const evenify = (n: number) => (n % 2 === 0 ? n : n + 1)
+
     setCanvasDimensions({
-      width: getPixelPerfectDimension(Math.floor(canvasWidth)),
-      height: getPixelPerfectDimension(Math.floor(canvasHeight)),
-      tileSize: getPixelPerfectDimension(Math.floor(tileSize)),
+      width: evenify(Math.floor(canvasWidth)),
+      height: evenify(Math.floor(canvasHeight)),
+      tileSize: evenify(Math.floor(tileSize)),
     })
   }
 
@@ -418,9 +420,4 @@ function getSprite(
     default:
       return null
   }
-}
-
-function getPixelPerfectDimension(num: number) {
-  if (num % 2 === 0 || num % 5 === 0) return num
-  else return num + 1
 }

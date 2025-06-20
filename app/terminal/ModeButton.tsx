@@ -11,23 +11,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Infinity, Trophy, Pencil, Lock, Vault } from "lucide-react"
+import { Infinity, Trophy, Pencil, Lock, Vault, Target } from "lucide-react"
 import Link from "next/link"
-import AuthDialog from "./AuthDialog"
+import AuthDialog from "../../components/AuthDialog"
 import { useAuth } from "@/contexts/auth"
 import { useRouter } from "nextjs-toploader/app"
 
 interface ModeButtonProps {
   title: string
-  description: string
+  summary: string
+  description: string | React.ReactNode
   readyMessage: string
-  icon: "infinity" | "trophy" | "pencil" | "vault"
+  icon: "infinity" | "trophy" | "pencil" | "vault" | "target"
   href: string
   requiresAuth?: boolean
 }
 
 const ModeButton: React.FC<ModeButtonProps> = ({
   title,
+  summary,
   description,
   readyMessage,
   icon,
@@ -50,6 +52,8 @@ const ModeButton: React.FC<ModeButtonProps> = ({
         return <Pencil className="w-8 h-8 mb-2" />
       case "vault":
         return <Vault className="w-8 h-8 mb-2" />
+      case "target":
+        return <Target className="w-8 h-8 mb-2" />
       default:
         return null
     }
@@ -77,7 +81,7 @@ const ModeButton: React.FC<ModeButtonProps> = ({
     <>
       <Button
         variant="outline"
-        className="h-auto py-6 flex flex-col items-start pixelated-border hover:bg-primary/20 transition-all duration-300 w-full bg-background/80 border-primary/50"
+        className="h-auto py-6 flex flex-col items-start pixelated-border hover:bg-primary/20 hover:shadow-[0_0_20px] hover:shadow-primary transition-all duration-300 w-full bg-background/80 border-primary/50"
         onClick={() => setOpen(true)}
       >
         <div className="flex items-center w-full mb-3">
@@ -91,7 +95,7 @@ const ModeButton: React.FC<ModeButtonProps> = ({
           </div>
         </div>
         <span className="font-mono text-sm text-left opacity-80 font-medium leading-relaxed pl-6">
-          {description.split(" ").slice(0, 10).join(" ")}...
+          {summary}
         </span>
       </Button>
 
@@ -103,9 +107,15 @@ const ModeButton: React.FC<ModeButtonProps> = ({
               {title}
             </DialogTitle>
           </DialogHeader>
-          <DialogDescription className="text-foreground/90 font-mono text-base font-medium leading-relaxed">
-            {description}
-          </DialogDescription>
+          {typeof description === "string" ? (
+            <DialogDescription className="text-foreground/90 font-mono text-base font-medium leading-relaxed">
+              {description}
+            </DialogDescription>
+          ) : (
+            <div className="text-foreground/90 font-mono text-base font-medium leading-relaxed">
+              {description}
+            </div>
+          )}
           <div className="my-4 p-4 bg-primary/10 rounded-md border border-primary/30">
             <p className="text-sm font-mono font-medium">{readyMessage}</p>
 
@@ -119,7 +129,7 @@ const ModeButton: React.FC<ModeButtonProps> = ({
           </div>
           <DialogFooter>
             <Button onClick={handlePlay} className="font-pixel">
-              PLAY
+              RUN
             </Button>
           </DialogFooter>
         </DialogContent>
