@@ -4,13 +4,10 @@ import {
   Target,
   Infinity,
   Building,
-  Pencil,
   Globe,
   Bot,
   Gamepad2,
   Settings,
-  Wrench,
-  Palette,
   Lock,
   BarChart3,
   Package,
@@ -246,74 +243,6 @@ export default function TerminalPage() {
             readyMessage="Join the global challenge! Every solve contributes to collective progress."
             icon="target"
             href="/boxoban"
-          />
-
-          <ModeButton
-            title="Sokoban Architect"
-            summary="Design and share your own custom Sokoban levels"
-            description={
-              <div className="space-y-4">
-                <div className="text-primary/90 font-semibold flex items-center gap-2">
-                  <Pencil className="w-4 h-4" />
-                  Become a puzzle architect!
-                </div>
-                <div>
-                  Unleash your creativity with our{" "}
-                  <span className="text-primary font-semibold">
-                    intuitive level editor
-                  </span>
-                  . Design intricate puzzles, test creations, and share
-                  masterpieces with the community.
-                </div>
-                <div className="bg-primary/5 p-3 rounded border border-primary/20">
-                  <div className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
-                    <Wrench className="w-4 h-4" />
-                    Creation Tools:
-                  </div>
-                  <ul className="text-sm space-y-1 list-disc list-inside">
-                    <li>
-                      <span className="text-primary">Drag & drop editor</span> -
-                      intuitive building
-                    </li>
-                    <li>
-                      <span className="text-primary">Real-time testing</span> -
-                      play as you build
-                    </li>
-                    <li>
-                      <span className="text-primary">Solution validation</span>{" "}
-                      - ensure solvability
-                    </li>
-                    <li>
-                      <span className="text-primary">Community sharing</span> -
-                      publish your work
-                    </li>
-                  </ul>
-                </div>
-                <div className="bg-primary/5 p-3 rounded border border-primary/20">
-                  <div className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
-                    <Palette className="w-4 h-4" />
-                    Express Your Vision:
-                  </div>
-                  <div className="text-xs space-y-1">
-                    <div>
-                      • Create puzzles from beginner-friendly to expert-level
-                    </div>
-                    <div>• Design themed collections and series</div>
-                    <div>• Challenge the community with unique mechanics</div>
-                  </div>
-                </div>
-                <div className="bg-amber-500/10 p-3 rounded border border-amber-500/30">
-                  <div className="text-xs text-amber-400 font-semibold flex items-center gap-2">
-                    <Lock className="w-3 h-3" />
-                    Requires Google account to save and share creations
-                  </div>
-                </div>
-              </div>
-            }
-            readyMessage="Time to unleash your creativity! What fiendish puzzles will you create?"
-            icon="pencil"
-            href="/architect"
-            requiresAuth={true}
           />
         </div>
       </div>
