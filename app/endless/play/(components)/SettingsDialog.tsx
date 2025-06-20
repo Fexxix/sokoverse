@@ -183,6 +183,9 @@ export function SettingsDialog({
     setShowUnsavedChangesAlert(false)
   }
 
+  const isFirstVisitAndDefaultPreset =
+    firstVisit && selectedPreset === "balanced"
+
   return (
     <>
       <Dialog
@@ -288,7 +291,7 @@ export function SettingsDialog({
               ) : (
                 <Save className="h-4 w-4" />
               )}{" "}
-              {firstVisit ? "Go with Default" : "Save"}
+              {isFirstVisitAndDefaultPreset ? "Go with Default" : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>
