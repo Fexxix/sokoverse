@@ -71,7 +71,7 @@ export default function DashboardView() {
     const now = new Date();
     let filtered: any[] = [];
     if (timeframe === "Today") {
-      const today = now.toISOString().slice(0, 10);
+      const today = new Date().toLocaleDateString("en-CA"); // local YYYY-MM-DD
       filtered = data.filter((d) => d.date === today);
     } else if (timeframe === "Last Week") {
       const weekAgo = new Date(now);
@@ -85,15 +85,11 @@ export default function DashboardView() {
       filtered = data;
     }
 
-    // Always add a first value of 0 if not present
-    if (filtered.length === 0 || filtered[0].users !== 0) {
-      filtered = [
-        {
-          ...(filtered[0] || { date: now.toISOString().slice(0, 10) }),
-          users: 0,
-        },
-        ...filtered,
-      ];
+    if (filtered.length === 0 || (filtered[0] && filtered[0].users !== 0)) {
+      filtered.unshift({
+        date: now.toISOString().slice(0, 10),
+        users: 0,
+      });
     }
 
     return filtered;
@@ -114,7 +110,7 @@ export default function DashboardView() {
           signups.map(({ date, count }) => ({ date, users: count }))
         );
       } catch (error) {
-        toast("Network error");
+        toast.error("Failed to load dashboard statistics. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -148,7 +144,7 @@ export default function DashboardView() {
           icon={<Infinity />}
         />
         <StatCard
-          title="Total Vault Levels Played"
+          title="Total Spike Vault Levels Played"
           value={vaultPlayed ?? "Loading..."}
           icon={<Vault />}
         />
@@ -177,6 +173,7 @@ export default function DashboardView() {
                 {["Today", "Last Week", "Last Month", "Total"].map(
                   (timeframe) => (
                     <Button
+                      disabled={loading}
                       key={timeframe}
                       size="sm"
                       onClick={() => setActiveTimeframe(timeframe)}
@@ -200,7 +197,7 @@ export default function DashboardView() {
             {loading ? (
               <div className="flex flex-col items-center justify-center h-80">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4"></div>
-                <span className="text-gray-500">Loading graph...</span>
+                <span className="text-gray-500">Loading ...</span>
               </div>
             ) : (
               <>
