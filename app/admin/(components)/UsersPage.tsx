@@ -12,8 +12,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { fetchFilteredUsersData } from "../action";
-
 import UsersList from "./UserList";
 
 import { AccountType, UserTimeRange } from "../queries";
@@ -21,6 +19,7 @@ import { toast } from "sonner";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import UsersReportPDF from "./UsersReportPDF";
 import { Button } from "@/components/ui/button";
+import { fetchFilteredUsersData } from "../actions";
 
 export type UserType = {
   id: number;
@@ -261,11 +260,29 @@ export default function UsersPage() {
 
       {isDownloadDialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
-          <div className="bg-white rounded-xl p-6 max-w-sm w-full space-y-4">
-            <h3 className="text-lg font-semibold">Report Ready</h3>
-            <p className="text-sm text-gray-500">
-              Click the button below to download the PDF.
-            </p>
+          <div className="bg-white rounded-xl p-6 max-w-md w-full space-y-5 shadow-lg">
+            {/* Title Section */}
+            <div className="space-y-1">
+              <h3 className="text-xl font-bold text-gray-900">
+                🎉 Users Report Ready
+              </h3>
+              <p className="text-sm text-gray-600">
+                Your gameplay engagement report is generated successfully.
+              </p>
+            </div>
+
+            {/* Info Section */}
+            <div className="bg-gray-50 border border-gray-200 rounded-md p-4 text-sm text-gray-700 space-y-2">
+              <p>This PDF includes:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Basic user account details (Google/Guest)</li>
+                <li>Gameplay stats for Endless, Boxoban, and Vaults</li>
+                <li>Vaults created and played by users</li>
+                <li>Table + detailed breakdown per user</li>
+              </ul>
+            </div>
+
+            {/* Button Section */}
             <div className="flex justify-end">
               <PDFDownloadLink
                 document={<UsersReportPDF users={reportUsers} />}
@@ -273,24 +290,24 @@ export default function UsersPage() {
               >
                 {({ loading, url }) =>
                   loading ? (
-                    <Button
+                    <button
                       disabled
                       className="px-4 py-2 text-sm bg-gray-300 text-gray-700 rounded-md"
                     >
                       Preparing...
-                    </Button>
+                    </button>
                   ) : (
                     <a
                       href={url!}
                       download="user_report.pdf"
                       onClick={() => {
                         setTimeout(() => {
-                          setDownloadDialogOpen(false); // Close after short delay
+                          setDownloadDialogOpen(false); // Close after delay
                         }, 1000);
                       }}
                       className="px-4 py-2 text-sm bg-black text-white rounded-md hover:bg-gray-800"
                     >
-                      Download PDF
+                      ⬇️ Download PDF
                     </a>
                   )
                 }

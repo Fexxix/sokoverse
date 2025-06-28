@@ -13,9 +13,12 @@ import { Button } from "@/components/ui/button";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { Line, LineChart, XAxis, YAxis, ReferenceLine } from "recharts";
 import { useEffect, useState } from "react";
-import { fetchUsersDataCount, fetchUserSignupGraphDataAction } from "../action";
 import StatCard from "./StatCard";
 import { toast } from "sonner";
+import {
+  fetchUsersDataCount,
+  fetchUserSignupGraphDataAction,
+} from "../actions";
 
 const chartConfig = {
   users: {

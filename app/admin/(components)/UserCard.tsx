@@ -11,8 +11,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { UserType } from "./UsersPage";
 import UserDetailPanel from "./UserDetailPanel";
+import { UserType } from "./UsersPage";
 
 interface UserCardProps {
   user: UserType;

@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { UserType } from "./UsersPage";
 import UserCard from "./UserCard";
+import { UserType } from "./UsersPage";
 
 interface UsersListProps {
   users: UserType[];
