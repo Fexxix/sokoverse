@@ -127,12 +127,43 @@ export const boxobanUserData = pgTable("boxoban_user_data", {
   updatedAt: timestamp("updated_at").defaultNow(),
 })
 
+export const overclockUserData = pgTable("overclock_user_data", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+
+  userId: integer("user_id")
+    .notNull()
+    .references(() => userTable.id)
+    .unique(),
+
+  currentLevel: integer("current_level").default(0), // Start at 0 and then add 30 when generating level server side
+  updatedAt: timestamp("updated_at").defaultNow(),
+})
+
+export const overclockLevels = pgTable("overclock_levels", {
+  id: uuid("id").primaryKey().defaultRandom(),
+
+  userId: integer("user_id").references(() => userTable.id),
+
+  levelNumber: integer("level_number").notNull(),
+
+  levelData: text("level_data").array().notNull(), // Boxoban format
+
+  completed: boolean("completed").default(false),
+  steps: integer("steps"),
+  timeMs: integer("time_ms"),
+
+  createdAt: timestamp("created_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+})
+
 // Relations
 export const userRelations = relations(userTable, ({ many, one }) => ({
   spikeVaults: many(spikeVaults),
   spikeVaultLevels: many(spikeVaultLevels),
   endlessLevels: many(endlessLevels),
   endlessUserData: one(endlessUserData),
+  overclockUserData: one(overclockUserData),
+  overclockLevels: many(overclockLevels),
 }))
 
 export const endlessUserDataRelations = relations(
@@ -191,6 +222,26 @@ export const boxobanUserDataRelations = relations(
     currentLevel: one(boxobanLevels, {
       fields: [boxobanUserData.currentLevelId],
       references: [boxobanLevels.levelId],
+    }),
+  })
+)
+
+export const overclockUserDataRelations = relations(
+  overclockUserData,
+  ({ one }) => ({
+    user: one(userTable, {
+      fields: [overclockUserData.userId],
+      references: [userTable.id],
+    }),
+  })
+)
+
+export const overclockLevelsRelations = relations(
+  overclockLevels,
+  ({ one }) => ({
+    user: one(userTable, {
+      fields: [overclockLevels.userId],
+      references: [userTable.id],
     }),
   })
 )
