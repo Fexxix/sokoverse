@@ -1,7 +1,6 @@
 "use client"
 
 import { createContext, useContext, type ReactNode } from "react"
-import { useQueryClient } from "@tanstack/react-query"
 
 export type User = {
   id: number
@@ -24,18 +23,8 @@ export function AuthProvider({
   children: ReactNode
   initialState: AuthContextType
 }) {
-  const queryClient = useQueryClient()
-
-  // Pre-populate the query cache with the initial state
-  queryClient.setQueryData(["auth"], initialState.user)
-
-  const refreshAuth = async () => {
-    await queryClient.invalidateQueries({ queryKey: ["auth"] })
-  }
-
   const value = {
     ...initialState,
-    refreshAuth,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

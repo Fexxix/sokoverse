@@ -37,7 +37,14 @@ export default function SokobanGame({
   initialLevel,
   firstVisit,
 }: {
-  endlessSettings: EndlessSettings | null
+  endlessSettings:
+    | (EndlessSettings & {
+        customWidth: number | null
+        customHeight: number | null
+        customMinWalls: number | null
+        customBoxes: number | null
+      })
+    | null
   initialLevel: { level: string[]; levelNumber: number; id: string } | null
   firstVisit: boolean
 }) {

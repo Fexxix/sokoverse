@@ -18,10 +18,11 @@ import {
   AlertTriangle,
   Lock,
 } from "lucide-react"
-import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
 import { anonymousSignIn } from "@/lib/server/auth/actions"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation } from "@tanstack/react-query"
+import { useTransition } from "react"
+import { useRouter } from "nextjs-toploader/app"
 
 interface AuthDialogProps {
   open: boolean
@@ -31,18 +32,17 @@ interface AuthDialogProps {
 
 const AuthDialog: React.FC<AuthDialogProps> = ({ open, onOpenChange }) => {
   const { toast } = useToast()
-  const queryClient = useQueryClient()
+  const router = useRouter()
+  const [isNavigatingToGoogleSignIn, startGoogleSignInNavigationTransition] =
+    useTransition()
 
   const anonymousSignInMutation = useMutation({
     mutationFn: anonymousSignIn,
-    onSuccess: (data) => {
-      queryClient.setQueryData(["auth"], data.user)
-      queryClient.invalidateQueries({ queryKey: ["auth"] })
-
+    onSuccess: () => {
       toast({
         title: "Playing as guest",
         description:
-          "Your progress will be saved for 2 weeks. Sign up to keep it permanently!",
+          "Your progress will be saved for 2 days. Sign up to keep it permanently!",
         duration: 6000,
       })
 
@@ -57,11 +57,25 @@ const AuthDialog: React.FC<AuthDialogProps> = ({ open, onOpenChange }) => {
     },
   })
 
-  const isSigningIn = anonymousSignInMutation.isPending
+  const isSigningInAnonymously = anonymousSignInMutation.isPending
+
+  const handleNavigateToGoogleSignIn = () =>
+    startGoogleSignInNavigationTransition(() => {
+      if (isNavigatingToGoogleSignIn || isSigningInAnonymously) return
+      router.push("/login/google")
+    })
+
+  const handleDialogOpenChange = () => {
+    if (isNavigatingToGoogleSignIn || isSigningInAnonymously) return
+    onOpenChange(false)
+  }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-background border-primary">
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
+      <DialogContent
+        hideCloseButton={!isSigningInAnonymously || !isNavigatingToGoogleSignIn}
+        className="bg-background border-primary"
+      >
         <DialogHeader>
           <DialogTitle className="font-pixel text-primary text-center">
             Choose Your Path
@@ -70,7 +84,7 @@ const AuthDialog: React.FC<AuthDialogProps> = ({ open, onOpenChange }) => {
 
         <div className="space-y-6">
           <div className="space-y-4">
-            <div className="text-primary/90 font-semibold text-center flex items-center justify-center gap-2">
+            <div className="text-primary/90 font-semibold font-mono text-center flex items-center justify-center gap-2">
               Choose your adventure wisely, brave pixel pusher!
             </div>
 
@@ -115,29 +129,28 @@ const AuthDialog: React.FC<AuthDialogProps> = ({ open, onOpenChange }) => {
             </div>
           </div>
           <div className="space-y-4">
-            <GoogleSignInWrapper isSigningIn={isSigningIn}>
-              <Button
-                className="w-full flex items-center justify-center space-x-2 py-6 pixelated-border"
-                disabled={isSigningIn}
-              >
-                <Google className="w-5 h-5" />
-                <span className="font-pixel ml-2">SIGN IN WITH GOOGLE</span>
-              </Button>
-            </GoogleSignInWrapper>
+            <Button
+              onClick={handleNavigateToGoogleSignIn}
+              className="w-full flex items-center justify-center space-x-2 py-6 pixelated-border"
+              disabled={isSigningInAnonymously || isNavigatingToGoogleSignIn}
+            >
+              <Google className="w-5 h-5" />
+              <span className="font-pixel ml-2">SIGN IN WITH GOOGLE</span>
+            </Button>
 
             <Button
               variant="outline"
               className="w-full flex items-center justify-center space-x-2 py-6 pixelated-border"
               onClick={() => anonymousSignInMutation.mutate()}
-              disabled={isSigningIn}
+              disabled={isSigningInAnonymously || isNavigatingToGoogleSignIn}
             >
-              {isSigningIn ? (
+              {isSigningInAnonymously ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <Anonymous className="w-5 h-5" />
               )}
               <span className="font-pixel ml-2">
-                {isSigningIn ? "CREATING GUEST..." : "PLAY AS GUEST"}
+                {isSigningInAnonymously ? "CREATING GUEST..." : "PLAY AS GUEST"}
               </span>
             </Button>
           </div>
@@ -148,27 +161,13 @@ const AuthDialog: React.FC<AuthDialogProps> = ({ open, onOpenChange }) => {
             variant="outline"
             onClick={() => onOpenChange(false)}
             className="font-pixel"
-            disabled={isSigningIn}
+            disabled={isSigningInAnonymously || isNavigatingToGoogleSignIn}
           >
             BACK
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
-}
-
-function GoogleSignInWrapper({
-  children,
-  isSigningIn,
-}: {
-  children: React.ReactNode
-  isSigningIn: boolean
-}) {
-  return isSigningIn ? (
-    <>{children}</>
-  ) : (
-    <Link href="/login/google">{children}</Link>
   )
 }
 

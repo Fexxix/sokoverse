@@ -34,6 +34,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useAction } from "next-safe-action/hooks"
+import { CustomSettingsDialog } from "./CustomSettingsDialog"
 
 // Level presets with performance indicators
 export const PRESET_LEVELS_WITH_DESCRIPTION = {
@@ -61,12 +62,25 @@ export const PRESET_LEVELS_WITH_DESCRIPTION = {
     description: "Larger playing field with more room to maneuver",
     performance: "Worth the Wait 🧠",
   },
+  custom: {
+    ...ENDLESS_PRESET_CONFIG.custom,
+    label: "Custom Mode",
+    description: "Define your own dimensions and constraints",
+    performance: "Variable Reliability ⚠️",
+  },
 } as const
 
 interface SettingsDialogProps {
   isLoading?: boolean
   fromCompletionDialog?: boolean
-  endlessSettings: EndlessSettings | null
+  endlessSettings:
+    | (EndlessSettings & {
+        customWidth: number | null
+        customHeight: number | null
+        customMinWalls: number | null
+        customBoxes: number | null
+      })
+    | null
   showSettingsDialog: boolean
   setShowSettingsDialog: (open: boolean) => void
   firstVisit: boolean
@@ -81,10 +95,13 @@ export function SettingsDialog({
   firstVisit,
 }: SettingsDialogProps) {
   const [showUnsavedChangesAlert, setShowUnsavedChangesAlert] = useState(false)
+  const [savedPreset, setSavedPreset] = useState(endlessSettings?.preset)
   const [selectedPreset, setSelectedPreset] = useState(
-    endlessSettings?.preset ?? "balanced"
+    savedPreset ?? "balanced"
   )
   const [hasChanges, setHasChanges] = useState(false)
+  const [showCustomSettingsDialog, setShowCustomSettingsDialog] =
+    useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -93,6 +110,16 @@ export function SettingsDialog({
       return setShowSettingsDialog(true)
     }
   }, [firstVisit, setShowSettingsDialog])
+
+  useEffect(() => {
+    if (
+      selectedPreset === "custom" &&
+      !showCustomSettingsDialog &&
+      showSettingsDialog
+    ) {
+      setShowCustomSettingsDialog(true)
+    }
+  }, [selectedPreset])
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (!firstVisit && (e.key === "x" || e.key === "X")) {
@@ -109,7 +136,7 @@ export function SettingsDialog({
   }, [handleKeyDown])
 
   const saveSettingsAction = useAction(saveSettings, {
-    onSuccess: () => {
+    onSuccess: ({ input }) => {
       toast({
         title: "Settings Saved",
         description: firstVisit
@@ -117,6 +144,7 @@ export function SettingsDialog({
           : "Your new settings will be applied to the next level.",
       })
 
+      setSavedPreset(input.preset)
       setShowSettingsDialog(false)
       setHasChanges(false)
 
@@ -141,12 +169,18 @@ export function SettingsDialog({
     if (firstVisit && !open) return
 
     // If trying to close with unsaved changes
-    if (!open && hasChanges) {
+    if (
+      !open &&
+      hasChanges &&
+      selectedPreset !== "custom" &&
+      !saveSettingsAction.isPending
+    ) {
       setShowUnsavedChangesAlert(true)
       return // Don't close the dialog yet
     }
     // Normal open/close behavior
     else {
+      if (saveSettingsAction.isPending) return
       setShowSettingsDialog(open)
     }
   }
@@ -161,7 +195,7 @@ export function SettingsDialog({
 
     // Just update the selected settings, don't apply yet
     setSelectedPreset(presetKey)
-    setHasChanges(true)
+    setHasChanges(presetKey !== savedPreset)
   }
 
   const handleSaveSettings = () => {
@@ -247,10 +281,12 @@ export function SettingsDialog({
                     <div className="font-mono text-xs text-foreground/70 mb-3">
                       {preset.description}
                     </div>
-                    <div className="font-mono text-xs text-foreground/50 mb-3">
-                      {preset.width}×{preset.height} grid • {preset.boxes} boxes
-                      • {preset.minWalls} walls
-                    </div>
+                    {key !== "custom" && (
+                      <div className="font-mono text-xs text-foreground/50 mb-3">
+                        {preset.width}×{preset.height} grid • {preset.boxes}{" "}
+                        boxes • {preset.minWalls} walls
+                      </div>
+                    )}
                     <Button
                       variant={selectedPreset === key ? "default" : "outline"}
                       size="sm"
@@ -260,10 +296,21 @@ export function SettingsDialog({
                           key as keyof typeof PRESET_LEVELS_WITH_DESCRIPTION
                         )
                       }
-                      disabled={isLoading}
+                      disabled={isLoading || saveSettingsAction.isPending}
                     >
                       {selectedPreset === key ? "CURRENT" : "SELECT"}
                     </Button>
+                    {key === "custom" && !showCustomSettingsDialog && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full font-pixel pixelated-border text-xs mt-2"
+                        onClick={() => setShowCustomSettingsDialog(true)}
+                        disabled={selectedPreset !== "custom"}
+                      >
+                        Open Custom Settings
+                      </Button>
+                    )}
                   </div>
                 )
               )}
@@ -271,9 +318,9 @@ export function SettingsDialog({
 
             <div className="bg-secondary/20 p-4 rounded-md">
               <p className="font-mono">
-                These presets are carefully tuned based on analysis of 1.7
-                million Sokoban solutions to ensure engaging puzzles with high
-                solve rates.
+                These presets are carefully tuned based on analysis of 100,000+
+                Sokoban solutions to ensure engaging puzzles with high solve
+                rates.
               </p>
             </div>
           </div>
@@ -282,7 +329,11 @@ export function SettingsDialog({
             <Button
               onClick={handleSaveSettings}
               disabled={
-                firstVisit ? false : !hasChanges || saveSettingsAction.isPending
+                firstVisit
+                  ? false
+                  : !hasChanges ||
+                    saveSettingsAction.isPending ||
+                    selectedPreset === "custom"
               }
               className="font-pixel pixelated-border flex items-center"
             >
@@ -332,6 +383,20 @@ export function SettingsDialog({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {selectedPreset === "custom" && (
+        <CustomSettingsDialog
+          savedPreset={savedPreset}
+          setSavedPreset={setSavedPreset}
+          open={showCustomSettingsDialog}
+          setOpen={setShowCustomSettingsDialog}
+          saveSettingsAction={saveSettingsAction}
+          customWidth={endlessSettings?.customWidth ?? null}
+          customHeight={endlessSettings?.customHeight ?? null}
+          customMinWalls={endlessSettings?.customMinWalls ?? null}
+          customBoxes={endlessSettings?.customBoxes ?? null}
+        />
+      )}
     </>
   )
 }

@@ -66,9 +66,27 @@ export const generateEndlessLevel = authActionClient
       throw new Error("No active level found.")
     }
 
+    // if the preset is custom and the custom settings are not found, throw an error
+    if (
+      userEndlessData.settings.preset === "custom" &&
+      (!userEndlessData.customWidth ||
+        !userEndlessData.customHeight ||
+        !userEndlessData.customMinWalls ||
+        !userEndlessData.customBoxes)
+    ) {
+      throw new Error("Custom settings not found.")
+    }
+
     // if not, generate a new level, insert it in db and return from db using .returning
     const data = await generateSokobanLevelServerSide(
-      ENDLESS_PRESET_CONFIG[userEndlessData.settings.preset]
+      userEndlessData.settings.preset === "custom"
+        ? {
+            width: userEndlessData.customWidth!,
+            height: userEndlessData.customHeight!,
+            minWalls: userEndlessData.customMinWalls!,
+            boxes: userEndlessData.customBoxes!,
+          }
+        : ENDLESS_PRESET_CONFIG[userEndlessData.settings.preset]
     )
 
     if (!data) {
@@ -122,30 +140,63 @@ const saveSettingsParamsSchema = z.object({
     Object.keys(ENDLESS_PRESET_CONFIG) as [EndlessPreset, ...EndlessPreset[]]
   ),
   pushRestriction: z.boolean(),
+  customWidth: z.number().min(5).max(12).optional(),
+  customHeight: z.number().min(5).max(12).optional(),
+  customMinWalls: z.number().min(5).max(12).optional(),
+  customBoxes: z.number().min(2).max(4).optional(),
 })
 
 export const saveSettings = authActionClient
   .metadata({ actionName: "saveSettings" })
   .schema(saveSettingsParamsSchema)
   .action(async ({ parsedInput, ctx }) => {
-    const settings = parsedInput
     const { user } = ctx
+    const {
+      preset,
+      pushRestriction,
+      customWidth,
+      customHeight,
+      customBoxes,
+      customMinWalls,
+    } = parsedInput
 
     const userEndlessData = await getUserEndlessData(user.id)
-
     const firstVisit = !userEndlessData
+
+    // Validate custom dimensions logic manually
+    const isCustom = preset === "custom"
+
+    if (
+      isCustom &&
+      (customWidth == null ||
+        customHeight == null ||
+        customBoxes == null ||
+        customMinWalls == null)
+    ) {
+      throw new Error("Custom preset requires custom width and height.")
+    }
+
+    const settings = { preset, pushRestriction }
+
+    const dbPayload = {
+      settings,
+      ...(isCustom && {
+        customWidth,
+        customHeight,
+        customBoxes,
+        customMinWalls,
+      }),
+    }
 
     if (firstVisit) {
       await db.insert(endlessUserData).values({
         userId: user.id,
-        settings,
+        ...dbPayload,
       })
     } else {
       await db
         .update(endlessUserData)
-        .set({
-          settings,
-        })
+        .set(dbPayload)
         .where(eq(endlessUserData.userId, user.id))
     }
 
@@ -325,4 +376,60 @@ export const updateLevel = authActionClient
         timeMs: stats.time,
       })
       .where(eq(endlessLevels.id, levelId))
+  })
+
+const predictGenRateSchema = z.object({
+  height: z.number().min(5).max(12),
+  width: z.number().min(5).max(12),
+  boxes: z.number().min(2).max(4),
+  minWalls: z.number().min(5).max(12),
+})
+
+const predictGenRateOutputSchema = z.union([
+  z.object({
+    success: z.literal(true),
+    prediction: z.object({
+      generationTime: z.number(),
+      successChance: z.number(),
+    }),
+  }),
+  z.object({
+    success: z.literal(false),
+    error: z.string(),
+  }),
+])
+
+export const predictLevelGenStats = authActionClient
+  .metadata({ actionName: "predictLevelGenStats" })
+  .schema(predictGenRateSchema)
+  .outputSchema(predictGenRateOutputSchema)
+  .action(async ({ parsedInput }) => {
+    try {
+      const res = await fetch("https://predictgenrate-iqrv47x3.b4a.run", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(parsedInput),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Prediction failed")
+      }
+
+      return {
+        success: true,
+        prediction: {
+          generationTime: data.level_generation_time,
+          successChance: data.level_success_chance,
+        },
+      }
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Unknown error",
+      }
+    }
   })

@@ -168,7 +168,7 @@ export default function BoxobanGame({ initialLevel }: BoxobanGameProps) {
           </TooltipContent>
         </Tooltip>
         <UnassignButton
-          isLoading={unassignCurrentLevelAction.isPending}
+          isLoading={unassignCurrentLevelAction.isPending || isLoading}
           unassignBoxobanLevel={
             unassignCurrentLevelAction.executeAsync as () => Promise<void>
           }
@@ -266,7 +266,11 @@ function UnassignButton({
           >
             Cancel
           </AlertDialogCancel>
-          <AlertDialogAction onClick={handleConfirm} disabled={isLoading}>
+          <AlertDialogAction
+            className="font-pixel"
+            onClick={handleConfirm}
+            disabled={isLoading}
+          >
             {isLoading && <Loader2 className="mr-2 animate-spin" />}
             Unassign
           </AlertDialogAction>

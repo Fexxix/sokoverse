@@ -31,9 +31,19 @@ async function EndlessChallengePage({
     initialLevel = result?.data
   }
 
+  const endlessSettings = userEndlessData?.settings
+    ? {
+        customWidth: userEndlessData?.customWidth,
+        customHeight: userEndlessData?.customHeight,
+        customMinWalls: userEndlessData?.customMinWalls,
+        customBoxes: userEndlessData?.customBoxes,
+        ...userEndlessData?.settings,
+      }
+    : null
+
   return (
     <EndlessGame
-      endlessSettings={userEndlessData?.settings ?? null}
+      endlessSettings={endlessSettings}
       initialLevel={
         initialLevel
           ? {

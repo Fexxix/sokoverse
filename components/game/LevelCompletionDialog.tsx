@@ -274,13 +274,15 @@ function LevelCompletionDialogSuccesState({
           </div>
 
           <div className="flex gap-2 items-center">
-            <Button
-              onClick={onReplayLevel}
-              variant="outline"
-              className="font-pixel pixelated-border flex items-center justify-center flex-grow"
-            >
-              Replay Level <RotateCcw className="ml-2 h-4 w-4" />
-            </Button>
+            {mode === "endless" && (
+              <Button
+                onClick={onReplayLevel}
+                variant="outline"
+                className="font-pixel pixelated-border flex items-center justify-center flex-grow"
+              >
+                Replay Level <RotateCcw className="ml-2 h-4 w-4" />
+              </Button>
+            )}
             {onUpdateLevel && (
               <Button
                 onClick={onUpdateLevel}
@@ -307,7 +309,7 @@ function getLinkFromMode(mode: LevelCompletionDialogProps["mode"]) {
     case "endless":
       return "/endless"
     case "spikeVault":
-      return "/spike-vault"
+      return "/spike-vaults"
     case "boxoban":
       return "/boxoban"
   }

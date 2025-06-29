@@ -29,6 +29,10 @@ export const endlessUserData = pgTable("endless_user_data", {
   settings: jsonb("settings").$type<EndlessSettings>(),
   levelCount: integer("level_count").default(0),
   updatedAt: timestamp("updated_at").defaultNow(),
+  customWidth: integer("custom_width"),
+  customHeight: integer("custom_height"),
+  customBoxes: integer("custom_boxes"),
+  customMinWalls: integer("custom_min_walls"),
 })
 
 export const sessionTable = pgTable("session", {

@@ -12,25 +12,18 @@ import {
 import { Button } from "@/components/ui/button"
 import { User, LogOut, Loader2, Chrome } from "lucide-react"
 import { useAuth } from "@/contexts/auth"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation } from "@tanstack/react-query"
 import { signOut } from "@/lib/server/auth/actions"
 import { useToast } from "@/components/ui/use-toast"
 import Link from "next/link"
 
 export function UserButton() {
-  const queryClient = useQueryClient()
   const { user } = useAuth()
   const { toast } = useToast()
 
   const signOutMutation = useMutation({
     mutationFn: signOut,
-    onMutate: async () => {
-      // Optimistically update the UI
-      queryClient.setQueryData(["auth"], null)
-    },
     onError: (error) => {
-      // Rollback on error
-      queryClient.setQueryData(["auth"], user)
       console.error("Failed to sign out:", error)
 
       toast({
