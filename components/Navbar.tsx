@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import ThemeSwitcher from "@/components/ThemeSwitcher"
 import AuthDialog from "@/components/AuthDialog"
-import { Infinity, Vault, Pencil, Terminal, Target } from "lucide-react"
+import { Infinity, Vault, Terminal, Target, Zap } from "lucide-react"
 import { useAuth } from "@/contexts/auth"
 import { UserButton } from "@/components/UserButton"
 
@@ -36,10 +36,10 @@ const Navbar = () => {
         name: "Boxoban Challenge",
         icon: <Target className="h-5 w-5 mr-2" />,
       }
-    } else if (pathname.startsWith("/architect")) {
+    } else if (pathname.startsWith("/overclock")) {
       return {
-        name: "Sokoban Architect",
-        icon: <Pencil className="h-5 w-5 mr-2" />,
+        name: "Overclock Mode",
+        icon: <Zap className="h-5 w-5 mr-2" />,
       }
     } else if (pathname.startsWith("/terminal")) {
       return {

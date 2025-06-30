@@ -11,7 +11,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Infinity, Trophy, Pencil, Lock, Vault, Target } from "lucide-react"
+import {
+  Infinity,
+  Trophy,
+  Pencil,
+  Lock,
+  Vault,
+  Target,
+  Zap,
+} from "lucide-react"
 import Link from "next/link"
 import AuthDialog from "../../components/AuthDialog"
 import { useAuth } from "@/contexts/auth"
@@ -22,7 +30,7 @@ interface ModeButtonProps {
   summary: string
   description: string | React.ReactNode
   readyMessage: string
-  icon: "infinity" | "trophy" | "pencil" | "vault" | "target"
+  icon: "infinity" | "trophy" | "pencil" | "vault" | "target" | "zap"
   href: string
   requiresAuth?: boolean
 }
@@ -54,6 +62,8 @@ const ModeButton: React.FC<ModeButtonProps> = ({
         return <Vault className="w-8 h-8 mb-2" />
       case "target":
         return <Target className="w-8 h-8 mb-2" />
+      case "zap":
+        return <Zap className="w-8 h-8 mb-2" />
       default:
         return null
     }

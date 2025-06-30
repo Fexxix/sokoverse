@@ -38,7 +38,7 @@ const ThemeSwitcher = () => {
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-56 font-mono [font-size:1rem_!important]"
+        className="w-56 font-mono [font-size:0.8rem_!important]"
         align="end"
       >
         <div className="space-y-2">

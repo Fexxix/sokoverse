@@ -11,6 +11,7 @@ import {
   Lock,
   BarChart3,
   Package,
+  Zap,
 } from "lucide-react"
 
 export const metadata: Metadata = {
@@ -243,6 +244,66 @@ export default function TerminalPage() {
             readyMessage="Join the global challenge! Every solve contributes to collective progress."
             icon="target"
             href="/boxoban"
+          />
+
+          <ModeButton
+            title="Overclock Mode"
+            summary="Premium high-intensity puzzle solving experience"
+            description={
+              <div className="space-y-4">
+                <div className="text-primary/90 font-semibold flex items-center gap-2">
+                  <Zap className="w-4 h-4" />
+                  Push your limits with extreme difficulty!
+                </div>
+                <div>
+                  Experience{" "}
+                  <span className="text-primary font-semibold">
+                    maximum challenge
+                  </span>{" "}
+                  with levels starting at difficulty 30 and escalating
+                  infinitely. No difficulty selection - pure progression.
+                </div>
+                <div className="bg-primary/5 p-3 rounded border border-primary/20">
+                  <div className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
+                    <Zap className="w-4 h-4" />
+                    Overclock Features:
+                  </div>
+                  <ul className="text-sm space-y-1 list-disc list-inside">
+                    <li>
+                      <span className="text-primary">Extreme difficulty</span> -
+                      starts where others end
+                    </li>
+                    <li>
+                      <span className="text-primary">No mercy mode</span> -
+                      relentless progression
+                    </li>
+                    <li>
+                      <span className="text-primary">Premium experience</span> -
+                      exclusive access
+                    </li>
+                    <li>
+                      <span className="text-primary">Elite leaderboards</span> -
+                      compete with the best
+                    </li>
+                  </ul>
+                </div>
+                <div className="bg-amber-500/10 p-3 rounded border border-amber-500/30">
+                  <div className="text-sm font-semibold text-amber-400 mb-2 flex items-center gap-2">
+                    <Lock className="w-4 h-4" />
+                    Premium Access Required:
+                  </div>
+                  <div className="text-sm space-y-1">
+                    <div>• One-time purchase for lifetime access</div>
+                    <div>• Support continued development</div>
+                    <div>• Join the elite puzzle solving community</div>
+                  </div>
+                </div>
+              </div>
+            }
+            readyMessage="Only the most dedicated puzzle solvers dare to overclock. Are you ready?"
+            icon="zap"
+            href="/overclock"
+            requiresAuth={true}
           />
         </div>
       </div>

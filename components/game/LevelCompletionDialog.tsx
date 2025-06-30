@@ -33,7 +33,7 @@ interface LevelCompletionDialogProps {
   onUpdateLevel?: (() => void) | null
   onSubmitRetry?: () => void
   stats: GameStats
-  mode: "endless" | "spikeVault" | "boxoban"
+  mode: "endless" | "spikeVault" | "boxoban" | "overclock"
   settingsDialog?: JSX.Element
   submitLevelState?: AsyncState
   updateLevelState?: AsyncState
@@ -274,7 +274,7 @@ function LevelCompletionDialogSuccesState({
           </div>
 
           <div className="flex gap-2 items-center">
-            {mode === "endless" && (
+            {mode !== "boxoban" && (
               <Button
                 onClick={onReplayLevel}
                 variant="outline"
@@ -312,6 +312,8 @@ function getLinkFromMode(mode: LevelCompletionDialogProps["mode"]) {
       return "/spike-vaults"
     case "boxoban":
       return "/boxoban"
+    case "overclock":
+      return "/overclock"
   }
 }
 
@@ -323,5 +325,7 @@ function getNameFromMode(mode: LevelCompletionDialogProps["mode"]) {
       return "Spike Vault"
     case "boxoban":
       return "Boxoban"
+    case "overclock":
+      return "Overclock"
   }
 }
