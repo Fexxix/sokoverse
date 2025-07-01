@@ -19,14 +19,24 @@ import {
 import AppSidebar from "./Sidebar";
 import DashboardView from "./DashboardView";
 import UsersPage from "./UsersPage";
+import AnalyticsPage from "./AnalyticsPage";
+import { useAuth } from "@/contexts/auth";
+
+const adminEmailMap = {
+  1: "fexxix@gmail.com",
+  20: "shahwaizmughal940@gmail.com",
+} as Record<number, string>;
 
 export default function AdminPanel() {
   const [activeView, setActiveView] = useState("dashboard");
+  const { user } = useAuth();
 
   const renderContent = () => {
     switch (activeView) {
       case "users":
         return <UsersPage />;
+      case "analytics":
+        return <AnalyticsPage />;
       case "dashboard":
       default:
         return <DashboardView />;
@@ -75,7 +85,7 @@ export default function AdminPanel() {
                       Admin User
                     </p>
                     <p className="text-xs text-gray-400 m-0">
-                      admin@sokoban.com
+                      {adminEmailMap[user?.id ?? 0] ?? ""}
                     </p>
                   </div>
                 </DropdownMenuLabel>
