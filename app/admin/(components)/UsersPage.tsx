@@ -56,7 +56,7 @@ export default function UsersPage() {
 
   // Report Generation
   const [isDialogOpen, setDialogOpen] = useState(false);
-  const [timeRange, setTimeRange] = useState("all");
+  const [timeRange, _] = useState("all");
 
   // For report generation
   const [reportTimeRange, setReportTimeRange] = useState<UserTimeRange>("all");
@@ -116,7 +116,7 @@ export default function UsersPage() {
       setReportUsers(users);
       setDialogOpen(false); // ✅ close generation dialog
       setDownloadDialogOpen(true); // ✅ open download dialog
-    } catch (err) {
+    } catch {
       toast.error("Failed to generate PDF report.");
     } finally {
       setReportGeneratingLoading(false);

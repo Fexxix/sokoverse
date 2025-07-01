@@ -79,23 +79,6 @@ const UsersReportPDF = ({ users }: UserReportPDFProps) => {
           Overview of user engagement across gameplay modes
         </Text>
 
-        {/* Game Introduction */}
-        <View style={styles.sectionTitle}>
-          <Text> Game Introduction</Text>
-        </View>
-        <Text style={styles.paragraph}>
-          This game is inspired by Sokoban-style puzzle mechanics. Players solve
-          challenges in three primary gameplay modes:
-        </Text>
-        <Text style={styles.paragraph}>
-          - **Endless Mode:** Randomly generated puzzles that continue
-          endlessly.
-          {"\n"}- **Boxoban Mode:** A curated set of puzzles sorted by
-          difficulty: Medium, Hard, and Unfiltered.
-          {"\n"}- **Vault Mode:** Community-created levels where users design
-          and share puzzles.
-        </Text>
-
         {/* Report Summary */}
         <Text style={styles.sectionTitle}>Report Summary</Text>
         <Text style={styles.paragraph}>

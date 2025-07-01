@@ -55,7 +55,7 @@ export default function UserCard({
             <p className="text-xs mt-1 text-gray-700">
               User ID: <span>{user.id}</span>
             </p>
-            <p className="text-xs text-gray-700 mt-1">
+            <div className="text-xs text-gray-700 mt-1">
               Account Type:{" "}
               <Badge
                 variant="secondary"
@@ -67,7 +67,7 @@ export default function UserCard({
               >
                 {user.isAnonymous ? "Guest Account" : "Google Account"}
               </Badge>
-            </p>
+            </div>
             <p className="text-xs text-gray-700 mt-1">
               Joined: <span>{formattedDate}</span>
             </p>
