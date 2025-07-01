@@ -12,6 +12,7 @@ module.exports = {
       fontFamily: {
         sans: ["var(--font-press-start-2p)"],
         mono: ["var(--font-vt323)"],
+        admin: ["var(--font-roboto)"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -75,4 +76,4 @@ module.exports = {
     },
   },
   plugins: [require("tailwindcss-animate")],
-}
+};
