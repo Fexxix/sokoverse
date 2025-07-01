@@ -7,6 +7,7 @@ import {
   uuid,
   jsonb,
   unique,
+  real,
 } from "drizzle-orm/pg-core"
 import { relations, type InferSelectModel } from "drizzle-orm"
 import { type EndlessSettings } from "@/lib/common/constants"
@@ -156,6 +157,22 @@ export const overclockLevels = pgTable("overclock_levels", {
   completedAt: timestamp("completed_at"),
 })
 
+export const userReviews = pgTable(
+  "user_reviews",
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    userId: integer("user_id")
+      .references(() => userTable.id)
+      .notNull(),
+    reviewText: text("review_text").notNull(),
+    starRating: real("star_rating").notNull(),
+    approved: boolean("approved").default(false),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [unique("unique_user_review").on(table.userId)]
+)
+
 // Relations
 export const userRelations = relations(userTable, ({ many, one }) => ({
   spikeVaults: many(spikeVaults),
@@ -164,6 +181,7 @@ export const userRelations = relations(userTable, ({ many, one }) => ({
   endlessUserData: one(endlessUserData),
   overclockUserData: one(overclockUserData),
   overclockLevels: many(overclockLevels),
+  userReviews: many(userReviews),
 }))
 
 export const endlessUserDataRelations = relations(
@@ -246,6 +264,13 @@ export const overclockLevelsRelations = relations(
   })
 )
 
+export const userReviewsRelations = relations(userReviews, ({ one }) => ({
+  user: one(userTable, {
+    fields: [userReviews.userId],
+    references: [userTable.id],
+  }),
+}))
+
 export type User = InferSelectModel<typeof userTable>
 export type Session = InferSelectModel<typeof sessionTable>
 export type SpikeVault = InferSelectModel<typeof spikeVaults>
@@ -257,3 +282,4 @@ export type BoxobanGlobalProgress = InferSelectModel<
   typeof boxobanGlobalProgress
 >
 export type BoxobanUserData = InferSelectModel<typeof boxobanUserData>
+export type UserReview = InferSelectModel<typeof userReviews>
