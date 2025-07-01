@@ -25,6 +25,27 @@ export type FilterOptions = {
   timeRange: UserTimeRange;
 };
 
+export type VisitorDetail = {
+  browser: string;
+  device: string;
+  os: string;
+  referrer: string;
+  pageviews: number;
+};
+export type TopPage = {
+  page: string;
+  pageviews: number;
+};
+
+export type AnalyticsData = {
+  visitors: number;
+  pageviews: number;
+  visits: number;
+  views_per_visit: number;
+  bounce_rate: number;
+  visit_duration?: number;
+};
+
 // Dashboard
 export async function getUsersDataCountQuery() {
   try {
@@ -211,4 +232,166 @@ export async function getFilteredUsers({
   );
 
   return result;
+}
+
+const PLAUSIBLE_API_KEY = process.env.PLAUSIBLE_API_KEY;
+export async function getWebsiteAnalyticsData(
+  date_range: string | [string, string] = "all"
+) {
+  if (!PLAUSIBLE_API_KEY) {
+    throw new Error("PLAUSIBLE_API_KEY env variable is missing.");
+  }
+
+  const res = await fetch("https://plausible.io/api/v2/query", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${PLAUSIBLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      site_id: "sokoverse.is-cool.dev",
+      metrics: [
+        "visitors",
+        "pageviews",
+        "visits",
+        "views_per_visit",
+        "bounce_rate",
+        "visit_duration",
+      ],
+      date_range,
+    }),
+  });
+
+  if (!res.ok) {
+    const error = await res.text();
+    throw new Error(`Plausible API error: ${error}`);
+  }
+
+  const data = await res.json();
+
+  const metrics = data?.results?.[0]?.metrics ?? [];
+  const visitors = metrics[0] ?? 0;
+  const pageviews = metrics[1] ?? 0;
+  const visits = metrics[2] ?? 0;
+  const views_per_visit = metrics[3] ?? 0;
+  const bounce_rate = metrics[4] ?? 0;
+  const visit_duration = metrics[5] ?? 0;
+
+  return {
+    visitors,
+    pageviews,
+    visits,
+    views_per_visit,
+    bounce_rate,
+    visit_duration,
+  };
+}
+
+export async function getTopPages(
+  date_range: string | [string, string] = "all"
+): Promise<TopPage[]> {
+  if (!PLAUSIBLE_API_KEY) {
+    throw new Error("PLAUSIBLE_API_KEY is missing in environment.");
+  }
+
+  const res = await fetch("https://plausible.io/api/v2/query", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${PLAUSIBLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      site_id: "sokoverse.is-cool.dev",
+      metrics: ["pageviews"],
+      date_range,
+      dimensions: ["event:page"],
+    }),
+  });
+
+  if (!res.ok) {
+    const error = await res.text();
+    throw new Error(`Plausible top pages API error: ${error}`);
+  }
+
+  const data = await res.json();
+
+  // Extract and map results
+  const results = data?.results ?? [];
+  return results.map((item: { dimensions: string[]; metrics: number[] }) => ({
+    page: item?.dimensions?.[0] ?? "Unknown",
+    pageviews: item?.metrics?.[0] ?? 0,
+  }));
+}
+
+export async function getVisitorDetails(
+  date_range: string | [string, string] = "all"
+): Promise<VisitorDetail[]> {
+  if (!PLAUSIBLE_API_KEY) {
+    throw new Error("PLAUSIBLE_API_KEY is missing in environment.");
+  }
+
+  const res = await fetch("https://plausible.io/api/v2/query", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${PLAUSIBLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      site_id: "sokoverse.is-cool.dev",
+      metrics: ["pageviews"],
+      date_range,
+      dimensions: [
+        "visit:browser",
+        "visit:device",
+        "visit:os",
+        "visit:referrer",
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const error = await res.text();
+    throw new Error(`Plausible visitor detail API error: ${error}`);
+  }
+
+  const data = await res.json();
+
+  const results = data?.results ?? [];
+
+  return results
+    .slice(0, 4)
+    .map((item: { dimensions: string[]; metrics: number[] }) => ({
+      browser: item?.dimensions?.[0] ?? "Unknown",
+      device: item?.dimensions?.[1] ?? "Unknown",
+      os: item?.dimensions?.[2] ?? "Unknown",
+      referrer: item?.dimensions?.[3] ?? "Unknown",
+      pageviews: item?.metrics?.[0] ?? 0,
+    }));
+}
+
+export async function getTimeSeriesData(date_range: string | [string, string]) {
+  if (!PLAUSIBLE_API_KEY) {
+    throw new Error("PLAUSIBLE_API_KEY is missing in environment.");
+  }
+
+  const res = await fetch("https://plausible.io/api/v2/query", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${PLAUSIBLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      site_id: "sokoverse.is-cool.dev",
+      metrics: ["visitors", "pageviews", "visits", "bounce_rate"],
+      date_range: date_range,
+      filters: [["is", "visit:os", ["GNU/Linux", "Mac"]]],
+      dimensions: [`time:${date_range === "day" ? "hour" : "day"}`],
+      include: {
+        time_labels: true,
+      },
+    }),
+  });
+
+  const data = await res.json();
+  return data;
 }
