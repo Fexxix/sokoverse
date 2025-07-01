@@ -1,30 +1,29 @@
-import "./globals.css"
-import { Press_Start_2P, Jersey_10 } from "next/font/google"
-import type React from "react"
-import Providers from "./providers"
-import PixelatedBackground from "@/components/PixelatedBackground"
-import FloatingPixels from "@/components/FloatingPixels"
-import Navbar from "@/components/Navbar"
-import SoundEffect from "@/components/SoundEffect"
-import { Toaster } from "@/components/ui/toaster"
-import { getCurrentSession } from "@/lib/server/auth/session"
-import NextTopLoader from "nextjs-toploader"
-import ThemeFaviconUpdater from "@/components/ThemeFaviconUpdater"
-import PreloadResources from "@/components/PreloadResources"
-import { Suspense } from "react"
-import { Loader } from "@/components/Loaders"
+import "./globals.css";
+import { Press_Start_2P, Jersey_10 } from "next/font/google";
+import type React from "react";
+import Providers from "./providers";
+import SoundEffect from "@/components/SoundEffect";
+import { Toaster } from "@/components/ui/toaster";
+import { getCurrentSession } from "@/lib/server/auth/session";
+import NextTopLoader from "nextjs-toploader";
+import ThemeFaviconUpdater from "@/components/ThemeFaviconUpdater";
+import PreloadResources from "@/components/PreloadResources";
+import { Suspense } from "react";
+import { Loader } from "@/components/Loaders";
+import ConditionalLayout from "@/components/ConditionalLayout";
+import PlausibleProvider from "next-plausible";
 
 const pressStart2P = Press_Start_2P({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-press-start-2p",
-})
+});
 
 const jersey10 = Jersey_10({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-jersey-10",
-})
+});
 
 export const metadata = {
   title: "Sokoverse - Push. Solve. Repeat.",
@@ -32,15 +31,23 @@ export const metadata = {
   icons: {
     icon: "/icon.png", // default
   },
-}
+};
 
 export default async function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <PlausibleProvider
+          domain={process.env.SITE_URL!.replace("https://", "")}
+          trackLocalhost={true}
+          enabled={true}
+          taggedEvents={true}
+        />
+      </head>
       <body
         className={`${pressStart2P.variable} ${jersey10.variable} font-sans bg-background text-foreground`}
       >
@@ -59,11 +66,11 @@ export default async function RootLayout({
         <Toaster />
       </body>
     </html>
-  )
+  );
 }
 
 async function SessionWrapper({ children }: { children: React.ReactNode }) {
-  const session = await getCurrentSession()
+  const session = await getCurrentSession();
   const initialAuthState = {
     user: session?.user
       ? {
@@ -74,16 +81,11 @@ async function SessionWrapper({ children }: { children: React.ReactNode }) {
         }
       : null,
     isAuthenticated: !!session?.user,
-  }
+  };
   return (
     <Providers initialAuthState={initialAuthState}>
       <ThemeFaviconUpdater />
-      <PixelatedBackground />
-      <FloatingPixels />
-      <div className="grid grid-rows-[auto_1fr] min-h-screen max-w-5xl mx-auto px-4">
-        <Navbar />
-        <main className="py-8">{children}</main>
-      </div>
+      <ConditionalLayout>{children}</ConditionalLayout>
     </Providers>
-  )
+  );
 }
