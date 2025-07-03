@@ -69,6 +69,10 @@ const UsersReportPDF = ({ users }: UserReportPDFProps) => {
       acc + user.boxoban.medium + user.boxoban.hard + user.boxoban.unfiltered,
     0
   );
+  const totalOverclockCompleted = users.reduce(
+    (acc, user) => acc + user.overclock.completedLevels,
+    0
+  );
 
   return (
     <Document>
@@ -89,6 +93,7 @@ const UsersReportPDF = ({ users }: UserReportPDFProps) => {
           - Total Users: {totalUsers}
           {"\n"}- Total Endless Levels Played: {totalEndless}
           {"\n"}- Total Boxoban Levels Solved: {totalBoxoban}
+          {"\n"}- Total Overclock Levels Completed: {totalOverclockCompleted}
           {"\n"}- Vaults Played: {totalVaults}
           {"\n"}- Vaults Created: {totalVaultsCreated}
         </Text>
@@ -104,6 +109,7 @@ const UsersReportPDF = ({ users }: UserReportPDFProps) => {
             "Created",
             "Endless",
             "Boxoban (M/H/U)",
+            "Overclock (Cur/Comp)",
           ].map((header) => (
             <Text
               key={header}
@@ -128,6 +134,9 @@ const UsersReportPDF = ({ users }: UserReportPDFProps) => {
               {user.boxoban.medium}/{user.boxoban.hard}/
               {user.boxoban.unfiltered}
             </Text>
+            <Text style={styles.tableCell}>
+              {user.overclock.currentLevel}/{user.overclock.completedLevels}
+            </Text>
           </View>
         ))}
 
@@ -146,6 +155,10 @@ const UsersReportPDF = ({ users }: UserReportPDFProps) => {
             <Text>
               Boxoban → Medium: {user.boxoban.medium}, Hard: {user.boxoban.hard}
               , Unfiltered: {user.boxoban.unfiltered}
+            </Text>
+            <Text>
+              Overclock → Current Level: {user.overclock.currentLevel},
+              Completed: {user.overclock.completedLevels}
             </Text>
             <Text>Created At: {user.createdAt}</Text>
 
