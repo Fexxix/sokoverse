@@ -1,8 +1,6 @@
 "use client" // Error boundaries must be Client Components
 
 import { AlertTriangle, RefreshCw, Home } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function GlobalError({
   error,
@@ -35,7 +33,7 @@ export default function GlobalError({
 
             <div className="error-message">
               <p>Something went wrong in the game engine.</p>
-              <p>Don't worry, your progress is safe!</p>
+              <p>Don&apos;t worry, your progress is safe!</p>
             </div>
 
             {process.env.NODE_ENV === "development" && (
