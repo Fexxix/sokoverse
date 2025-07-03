@@ -1,27 +1,27 @@
 import {
   getApprovedReviews,
   getReviewStats,
-} from "@/lib/server/reviews/queries"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import StarRatingFractions from "@/components/ui/star-rating-fractions"
-import { MessageSquare, Star, Users } from "lucide-react"
-import { formatDistanceToNow } from "date-fns"
-import { connection } from "next/server"
+} from "@/lib/server/reviews/queries";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import StarRatingFractions from "@/components/ui/star-rating-fractions";
+import { MessageSquare, Star, Users } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { connection } from "next/server";
 
 interface ReviewsSectionProps {
-  className?: string
+  className?: string;
 }
 
 export default async function ReviewsSection({
   className,
 }: ReviewsSectionProps) {
-  await connection()
+  await connection();
 
   const [reviews, stats] = await Promise.all([
     getApprovedReviews(),
     getReviewStats(),
-  ])
+  ]);
 
   if (reviews.length === 0) {
     return (
@@ -40,7 +40,7 @@ export default async function ReviewsSection({
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -122,5 +122,5 @@ export default async function ReviewsSection({
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
