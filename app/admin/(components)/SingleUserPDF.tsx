@@ -7,16 +7,28 @@ type Props = { user: UserType };
 const styles = StyleSheet.create({
   page: { padding: 20, fontSize: 10 },
   header: { fontSize: 18, marginBottom: 10, textAlign: "center" },
-  section: { marginBottom: 12 },
-  label: { fontWeight: "bold" },
-  vaultItem: { marginLeft: 10, marginTop: 2 },
+  section: {
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderColor: "#ccc",
+  },
   paragraph: { marginBottom: 6, lineHeight: 1.4 },
+  label: { fontSize: 12, marginBottom: 4, fontWeight: "bold" },
+
+  table: { width: "100%", marginTop: 6 },
+  tableRow: { flexDirection: "row" },
+  tableColKey: { width: "40%", fontWeight: "bold", paddingVertical: 2 },
+  tableColValue: { width: "60%", paddingVertical: 2 },
+
+  vaultItem: { marginLeft: 10, marginTop: 2 },
 });
 
 const SingleUserPDF = ({ user }: Props) => {
   const totalBoxoban =
     user.boxoban.medium + user.boxoban.hard + user.boxoban.unfiltered;
-  const totalLevels = user.endless + totalBoxoban + user.vaults;
+  const totalLevels =
+    user.endless + totalBoxoban + user.vaults + user.overclock.completedLevels;
 
   return (
     <Document>
@@ -42,23 +54,77 @@ const SingleUserPDF = ({ user }: Props) => {
         {/* User Info Section */}
         <View style={styles.section}>
           <Text style={styles.label}>User Information</Text>
-          <Text>User ID: {user.id}</Text>
-          <Text>Google ID: {user.googleId}</Text>
-          <Text>Account Type: {user.isAnonymous ? "Guest" : "Google"}</Text>
-          <Text>Joined At: {user.createdAt}</Text>
+          <View style={styles.table}>
+            <View style={styles.tableRow}>
+              <Text style={styles.tableColKey}>User ID:</Text>
+              <Text style={styles.tableColValue}>{user.id}</Text>
+            </View>
+            <View style={styles.tableRow}>
+              <Text style={styles.tableColKey}>Google ID:</Text>
+              <Text style={styles.tableColValue}>{user.googleId}</Text>
+            </View>
+            <View style={styles.tableRow}>
+              <Text style={styles.tableColKey}>Account Type:</Text>
+              <Text style={styles.tableColValue}>
+                {user.isAnonymous ? "Guest" : "Google"}
+              </Text>
+            </View>
+            <View style={styles.tableRow}>
+              <Text style={styles.tableColKey}>Joined At:</Text>
+              <Text style={styles.tableColValue}>{user.createdAt}</Text>
+            </View>
+          </View>
         </View>
 
         {/* Game Stats Section */}
         <View style={styles.section}>
           <Text style={styles.label}>Game Stats</Text>
-          <Text>- Endless Levels: {user.endless}</Text>
-          <Text>
-            - Boxoban: Medium {user.boxoban.medium}, Hard {user.boxoban.hard},
-            Unfiltered {user.boxoban.unfiltered}
-          </Text>
-          <Text>- Vaults Played: {user.vaults}</Text>
-          <Text>- Vaults Created: {user.totalVaultsCreated}</Text>
-          <Text>- Total Levels Played: {totalLevels}</Text>
+          <View style={styles.table}>
+            <View style={styles.tableRow}>
+              <Text style={styles.tableColKey}>Endless Levels:</Text>
+              <Text style={styles.tableColValue}>{user.endless}</Text>
+            </View>
+            <View style={styles.tableRow}>
+              <Text style={styles.tableColKey}>Boxoban (Medium):</Text>
+              <Text style={styles.tableColValue}>{user.boxoban.medium}</Text>
+            </View>
+            <View style={styles.tableRow}>
+              <Text style={styles.tableColKey}>Boxoban (Hard):</Text>
+              <Text style={styles.tableColValue}>{user.boxoban.hard}</Text>
+            </View>
+            <View style={styles.tableRow}>
+              <Text style={styles.tableColKey}>Boxoban (Unfiltered):</Text>
+              <Text style={styles.tableColValue}>
+                {user.boxoban.unfiltered}
+              </Text>
+            </View>
+            <View style={styles.tableRow}>
+              <Text style={styles.tableColKey}>Overclock (Current Level):</Text>
+              <Text style={styles.tableColValue}>
+                {user.overclock.currentLevel}
+              </Text>
+            </View>
+            <View style={styles.tableRow}>
+              <Text style={styles.tableColKey}>Overclock (Completed):</Text>
+              <Text style={styles.tableColValue}>
+                {user.overclock.completedLevels}
+              </Text>
+            </View>
+            <View style={styles.tableRow}>
+              <Text style={styles.tableColKey}>Vaults Played:</Text>
+              <Text style={styles.tableColValue}>{user.vaults}</Text>
+            </View>
+            <View style={styles.tableRow}>
+              <Text style={styles.tableColKey}>Vaults Created:</Text>
+              <Text style={styles.tableColValue}>
+                {user.totalVaultsCreated}
+              </Text>
+            </View>
+            <View style={styles.tableRow}>
+              <Text style={styles.tableColKey}>Total Levels Played:</Text>
+              <Text style={styles.tableColValue}>{totalLevels}</Text>
+            </View>
+          </View>
         </View>
 
         {/* Vault List Section */}

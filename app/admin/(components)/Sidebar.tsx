@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Sidebar,
   SidebarContent,
@@ -10,7 +12,13 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { BarChart3, GamepadIcon, Home, Users } from "lucide-react";
+import {
+  BarChart3,
+  GamepadIcon,
+  Home,
+  Users,
+  MessageSquare,
+} from "lucide-react";
 
 // Better navItems config with `view` key
 const navItems = [
@@ -23,6 +31,11 @@ const navItems = [
     title: "Users",
     view: "users",
     icon: Users,
+  },
+  {
+    title: "Feedback",
+    view: "feedback",
+    icon: MessageSquare,
   },
   {
     title: "Analytics",

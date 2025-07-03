@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Users, BarChart3, Infinity, Target, Vault } from "lucide-react";
+import { Users, BarChart3, Infinity, Target, Vault, Zap } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -28,12 +28,13 @@ import {
 } from "../actions";
 
 export default function DashboardView() {
-  const [activeTimeframe, setActiveTimeframe] = useState("Last Week");
+  const [activeTimeframe, setActiveTimeframe] = useState("Total");
   const [totalUsers, setTotalUsers] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [endlessPlayed, setEndlessPlayed] = useState<number | null>(null);
   const [vaultPlayed, setVaultPlayed] = useState<number | null>(null);
   const [boxobanPlayed, setBoxobanPlayed] = useState<number | null>(null);
+  const [overclockPlayed, setOverclockPlayed] = useState<number | null>(null);
   const [userSignupData, setUserSignupData] = useState<
     { date: string; users: number }[]
   >([]);
@@ -108,6 +109,7 @@ export default function DashboardView() {
         setEndlessPlayed(res?.endlessPlayed ?? 0);
         setVaultPlayed(res?.vaultPlayed ?? 0);
         setBoxobanPlayed(res?.boxobanPlayed ?? 0);
+        setOverclockPlayed(res?.overclockPlayed ?? 0);
 
         setUserSignupData(
           signups.map(({ date, count }) => ({ date, users: count }))
@@ -136,7 +138,7 @@ export default function DashboardView() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <StatCard
           title="Total Users"
           value={loading ? "Loading..." : totalUsers?.toLocaleString() ?? "0"}
@@ -148,7 +150,7 @@ export default function DashboardView() {
           icon={<Infinity />}
         />
         <StatCard
-          title="Total Spike Vault Levels Played"
+          title="Total Spike Vault Levels Played (Expert Mode)"
           value={vaultPlayed ?? "Loading..."}
           icon={<Vault />}
         />
@@ -156,6 +158,11 @@ export default function DashboardView() {
           title="Boxoban Levels Played"
           value={boxobanPlayed ?? "Loading..."}
           icon={<Target />}
+        />
+        <StatCard
+          title="Overclock Levels Played"
+          value={overclockPlayed ?? "Loading..."}
+          icon={<Zap />}
         />
       </div>
 

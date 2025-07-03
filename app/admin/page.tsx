@@ -28,6 +28,7 @@ function AdminPage({ session }: { session: ValidatedSession }) {
       <style>
         {`
       body {
+      background-color: #f5f5f5 !important;
         font-family: ${roboto.style.fontFamily}, sans-serif !important;
       }
     `}

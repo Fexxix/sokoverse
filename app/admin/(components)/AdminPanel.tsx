@@ -20,7 +20,9 @@ import AppSidebar from "./Sidebar";
 import DashboardView from "./DashboardView";
 import UsersPage from "./UsersPage";
 import AnalyticsPage from "./AnalyticsPage";
+import FeedbackPage from "./FeedbackPage";
 import { useAuth } from "@/contexts/auth";
+import { signOut } from "@/lib/server/auth/actions";
 
 const adminEmailMap = {
   1: "fexxix@gmail.com",
@@ -28,8 +30,10 @@ const adminEmailMap = {
 } as Record<number, string>;
 
 export default function AdminPanel() {
-  const [activeView, setActiveView] = useState("dashboard");
   const { user } = useAuth();
+
+  // Get initial view from URL or default to dashboard
+  const [activeView, setActiveView] = useState("dashboard");
 
   const renderContent = () => {
     switch (activeView) {
@@ -37,6 +41,8 @@ export default function AdminPanel() {
         return <UsersPage />;
       case "analytics":
         return <AnalyticsPage />;
+      case "feedback":
+        return <FeedbackPage />;
       case "dashboard":
       default:
         return <DashboardView />;
@@ -91,7 +97,7 @@ export default function AdminPanel() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-gray-200 h-px my-1" />
                 <DropdownMenuItem className="px-3 py-2 text-sm text-gray-700 cursor-pointer transition-colors hover:bg-gray-50">
-                  Log out
+                  <button onClick={() => signOut()}>Log out</button>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

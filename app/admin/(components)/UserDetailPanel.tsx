@@ -1,5 +1,5 @@
 import * as React from "react";
-import { User, Download, Infinity, Target, Vault } from "lucide-react";
+import { User, Download, Infinity, Target, Vault, Zap } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -72,7 +72,7 @@ export default function UserDetailPanel({ user }: UserDetailPanelProps) {
       </div>
 
       {/* Game Statistics */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 overflow-y-auto max-h-[75vh] pr-1">
         <h4 className="text-base font-semibold text-gray-900">
           Game Statistics
         </h4>
@@ -128,12 +128,42 @@ export default function UserDetailPanel({ user }: UserDetailPanelProps) {
           </CardContent>
         </Card>
 
+        {/* Overclock Mode */}
+        <Card className="bg-white border border-gray-200 rounded-lg shadow-sm">
+          <CardHeader className="flex items-center gap-2 pb-2">
+            <CardTitle className="flex items-center gap-2 text-base font-medium text-gray-800">
+              <Zap className="h-5 w-5" />
+              Overclock Mode
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4 mb-2">
+              <div className="flex flex-col items-center">
+                <div className="text-xl font-bold text-gray-900">
+                  {user.overclock.currentLevel}
+                </div>
+                <p className="text-xs text-gray-500">Current Level</p>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="text-xl font-bold text-gray-900">
+                  {user.overclock.completedLevels}
+                </div>
+                <p className="text-xs text-gray-500">Completed</p>
+              </div>
+            </div>
+            <div className="text-xs text-gray-600 text-center">
+              Progress: {user.overclock.completedLevels} /{" "}
+              {user.overclock.currentLevel + 1} levels
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Vault Mode Summary + Dialog Trigger */}
         {user.totalVaultsCreated > 0 && (
           <>
             <Card
               onClick={() => setIsDialogOpen(true)}
-              className="bg-white border border-gray-200 rounded-lg shadow-sm cursor-pointer hover:shadow-md transition"
+              className="bg-white border border-gray-200 rounded-lg shadow-sm cursor-pointer hover:shadow-md transition mb-10"
             >
               <CardHeader className="flex items-center gap-2 pb-2">
                 <CardTitle className="flex items-center gap-2 text-base font-medium text-gray-800">

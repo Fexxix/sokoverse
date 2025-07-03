@@ -1,7 +1,7 @@
 import ReviewsCarousel from "./ReviewsCarousel"
 
 interface ReviewsSectionProps {
-  className?: string
+  className?: string;
 }
 
 export default function ReviewsSection({ className }: ReviewsSectionProps) {

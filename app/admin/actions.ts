@@ -14,6 +14,9 @@ import {
   getWebsiteAnalyticsData,
   TopPage,
   VisitorDetail,
+  getApprovedReviews,
+  getUnapprovedReviews,
+  ReviewWithUser,
 } from "./queries";
 
 export async function fetchUsersDataCount() {
@@ -27,6 +30,7 @@ export async function fetchUsersDataCount() {
       endlessPlayed: 0,
       vaultPlayed: 0,
       boxobanPlayed: 0,
+      overclockPlayed: 0,
     };
   }
 }
@@ -143,5 +147,45 @@ export async function fetchTimeSeriesData(
   } catch (error) {
     console.error("Error fetching time series data:", error);
     return [];
+  }
+}
+
+// Review/Feedback actions
+export async function fetchApprovedReviews(): Promise<ReviewWithUser[]> {
+  try {
+    return await getApprovedReviews();
+  } catch (error) {
+    console.error("Error fetching approved reviews:", error);
+    return [];
+  }
+}
+
+export async function fetchUnapprovedReviews(): Promise<ReviewWithUser[]> {
+  try {
+    return await getUnapprovedReviews();
+  } catch (error) {
+    console.error("Error fetching unapproved reviews:", error);
+    return [];
+  }
+}
+
+export async function toggleReviewApproval(
+  reviewId: number,
+  approved: boolean
+): Promise<boolean> {
+  try {
+    const { db } = await import("@/lib/server/db");
+    const { userReviews } = await import("@/lib/server/db/schema");
+    const { eq } = await import("drizzle-orm");
+
+    await db
+      .update(userReviews)
+      .set({ approved, updatedAt: new Date() })
+      .where(eq(userReviews.id, reviewId));
+
+    return true;
+  } catch (error) {
+    console.error("Error toggling review approval:", error);
+    return false;
   }
 }

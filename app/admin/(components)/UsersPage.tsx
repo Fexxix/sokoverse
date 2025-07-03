@@ -41,6 +41,10 @@ export type UserType = {
     hard: number;
     unfiltered: number;
   };
+  overclock: {
+    currentLevel: number;
+    completedLevels: number;
+  };
 };
 
 export default function UsersPage() {
@@ -67,25 +71,24 @@ export default function UsersPage() {
   {
     /* ---------- User screen fetch users data ---------- */
   }
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const users = await fetchFilteredUsersData({
+        accountType: accountTypeFilter,
+        searchTerm: "", // optional but you can pass empty here
+        timeRange: "all",
+      });
+      setUsersData(users);
+    } catch (err) {
+      console.error("Error fetching users:", err);
+      toast.error("Failed to fetch users. Please try again.");
+      setError("Failed to fetch users. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      try {
-        const users = await fetchFilteredUsersData({
-          accountType: accountTypeFilter,
-          searchTerm: "", // optional but you can pass empty here
-          timeRange: "all",
-        });
-        setUsersData(users);
-      } catch (err) {
-        console.error("Error fetching users:", err);
-        toast.error("Failed to fetch users. Please try again.");
-        setError("Failed to fetch users. Try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchUsers();
   }, [accountTypeFilter, timeRange]); // ✅ removed `searchTerm`
 
@@ -98,7 +101,8 @@ export default function UsersPage() {
       user.endless +
       user.boxoban.medium +
       user.boxoban.hard +
-      user.boxoban.unfiltered
+      user.boxoban.unfiltered +
+      user.overclock.completedLevels
     );
   };
 
@@ -302,12 +306,13 @@ export default function UsersPage() {
                       download="user_report.pdf"
                       onClick={() => {
                         setTimeout(() => {
-                          setDownloadDialogOpen(false); // Close after delay
+                          setDownloadDialogOpen(false);
                         }, 1000);
                       }}
-                      className="px-4 py-2 text-sm bg-black text-white rounded-md hover:bg-gray-800"
+                      className="px-4 py-2 text-sm bg-black text-white rounded-md hover:bg-gray-800 flex items-center gap-2"
                     >
-                      ⬇️ Download PDF
+                      <Download className="w-4 h-4" />
+                      Download PDF
                     </a>
                   )
                 }
@@ -321,10 +326,15 @@ export default function UsersPage() {
       {loading ? (
         <div className="flex flex-col items-center justify-center h-80">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4"></div>
-          <span className="text-gray-500">Loading graph...</span>
+          <span className="text-gray-500">Loading Users...</span>
         </div>
       ) : error ? (
-        <p className="text-red-500 mt-4">{error}</p>
+        <div className="mt-4 text-center">
+          <p className="text-red-500 mb-2">{error}</p>
+          <Button onClick={() => fetchUsers()} variant="outline">
+            Try Again
+          </Button>
+        </div>
       ) : (
         <>
           <div className="mt-4">
