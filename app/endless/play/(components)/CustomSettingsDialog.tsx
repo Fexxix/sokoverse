@@ -18,6 +18,7 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -228,6 +229,9 @@ export function CustomSettingsDialog({
                       <Input type="number" {...field} />
                     </FormControl>
                     <FormMessage className="font-mono" />
+                    <FormDescription className="font-mono">
+                      Minimum 5, Maximum 12
+                    </FormDescription>
                   </FormItem>
                 )}
               />
@@ -241,6 +245,9 @@ export function CustomSettingsDialog({
                       <Input type="number" {...field} />
                     </FormControl>
                     <FormMessage className="font-mono" />
+                    <FormDescription className="font-mono">
+                      Minimum 5, Maximum 12
+                    </FormDescription>
                   </FormItem>
                 )}
               />
@@ -254,6 +261,9 @@ export function CustomSettingsDialog({
                       <Input type="number" {...field} />
                     </FormControl>
                     <FormMessage className="font-mono" />
+                    <FormDescription className="font-mono">
+                      Minimum 2, Maximum 4
+                    </FormDescription>
                   </FormItem>
                 )}
               />
@@ -267,6 +277,9 @@ export function CustomSettingsDialog({
                       <Input type="number" {...field} />
                     </FormControl>
                     <FormMessage className="font-mono" />
+                    <FormDescription className="font-mono">
+                      Minimum 5, Maximum 12
+                    </FormDescription>
                   </FormItem>
                 )}
               />

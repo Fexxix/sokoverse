@@ -90,7 +90,7 @@ export default function TerminalPage() {
           />
 
           <ModeButton
-            title="Spike Vaults"
+            title="Spike Vaults (Expert Mode)"
             summary="Procedural puzzle collections with increasing difficulty"
             description={
               <div className="space-y-4">
@@ -206,20 +206,22 @@ export default function TerminalPage() {
                       <span className="text-green-400 font-semibold">
                         Unfiltered:
                       </span>
-                      Raw generator output - some trivial, others extremely
-                      difficult
+                      A mix of easy and hard levels straight from the generator
+                      — no quality control.
                     </div>
                     <div className="flex items-center gap-2">
                       <Settings className="w-3 h-3 text-yellow-400" />
                       <span className="text-yellow-400 font-semibold">
                         Medium:
                       </span>
-                      Required non-trivial reasoning from DRC agents
+                      Levels that require some thinking — solved by smarter AI,
+                      not brute force.
                     </div>
                     <div className="flex items-center gap-2">
                       <Lock className="w-3 h-3 text-red-400" />
                       <span className="text-red-400 font-semibold">Hard:</span>
-                      Stumped even strong AI agents - true reasoning challenges
+                      Extremely tricky — even advanced AI struggles. Real brain
+                      teasers.
                     </div>
                   </div>
                 </div>

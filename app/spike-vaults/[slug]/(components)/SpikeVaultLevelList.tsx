@@ -10,10 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
 import { formatTime } from "@/lib/client/game-logic"
-import { Play, Check } from "lucide-react"
-import Link from "next/link"
+import { Check } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 interface SpikeVaultLevelListProps {
@@ -23,7 +21,7 @@ interface SpikeVaultLevelListProps {
 
 export default function SpikeVaultLevelList({
   levels,
-  vaultSlug,
+  vaultSlug: _,
 }: SpikeVaultLevelListProps) {
   if (levels.length === 0) {
     return (
@@ -49,9 +47,6 @@ export default function SpikeVaultLevelList({
               <TableHead className="font-pixel text-primary">Status</TableHead>
               <TableHead className="font-pixel text-primary">Steps</TableHead>
               <TableHead className="font-pixel text-primary">Time</TableHead>
-              <TableHead className="font-pixel text-primary text-right">
-                Play
-              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -94,25 +89,6 @@ export default function SpikeVaultLevelList({
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    asChild
-                    variant={level.completed ? "outline" : "default"}
-                    size="sm"
-                    className="pixelated-border font-pixel"
-                  >
-                    <Link
-                      href={
-                        !level.completed
-                          ? `/spike-vaults/${vaultSlug}/play`
-                          : `/spike-vaults/${vaultSlug}/replay?levelId=${level.id}`
-                      }
-                    >
-                      {level.completed ? "Replay" : "Play"}
-                      <Play className="h-3 w-3 ml-1" />
-                    </Link>
-                  </Button>
                 </TableCell>
               </TableRow>
             ))}

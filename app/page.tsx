@@ -34,9 +34,9 @@ function ReviewsSkeleton() {
 
 export default function Home() {
   return (
-    <div className="space-y-16">
-      {/* Hero Section */}
-      <div className="min-h-[calc(100vh-300px)] flex flex-col items-center justify-center">
+    <>
+      {/* Hero Section - Full viewport height */}
+      <div className="min-h-[calc(100vh-72px-2rem)] flex flex-col items-center justify-center">
         <div className="w-full max-w-4xl text-center my-12 relative z-10">
           <ThemedHeroIcon />
           <h1 className="text-4xl md:text-5xl font-pixel mb-4">SOKOVERSE</h1>
@@ -55,7 +55,7 @@ export default function Home() {
         </div>
 
         {/* Start Button */}
-        <div className="mt-12 relative z-10">
+        <div className="mt-6 relative z-10">
           <Button
             asChild
             className="font-pixel text-lg px-8 py-6 pixelated-border flex items-center gap-2 hover:bg-primary/90 transition-colors"
@@ -67,12 +67,14 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Reviews Section */}
-      <div className="max-w-4xl mx-auto">
-        <Suspense fallback={<ReviewsSkeleton />}>
-          <ReviewsSection />
-        </Suspense>
+      {/* Reviews Section - Separate section below hero */}
+      <div className="py-16 flex justify-center">
+        <div className="w-[400px] md:w-[700px] lg:w-[896px]">
+          <Suspense fallback={<ReviewsSkeleton />}>
+            <ReviewsSection />
+          </Suspense>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
