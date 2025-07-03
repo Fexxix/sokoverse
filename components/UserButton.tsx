@@ -136,7 +136,7 @@ export function UserButton() {
               <DropdownMenuItem
                 onClick={() => setReviewDialogOpen(true)}
                 disabled={loadingReview}
-                className="cursor-pointer"
+                className="cursor-pointer font-mono"
               >
                 <MessageSquare className="h-4 w-4 mr-2" />
                 {userReview ? "Edit Review" : "Leave a Review"}

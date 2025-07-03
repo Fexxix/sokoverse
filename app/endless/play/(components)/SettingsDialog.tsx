@@ -1,7 +1,13 @@
 "use client"
 
 import { useState, useEffect, Fragment } from "react"
-import { Settings, Save, AlertTriangle, Loader2 } from "lucide-react"
+import {
+  Settings,
+  Save,
+  AlertTriangle,
+  Loader2,
+  RefreshCcw,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -139,9 +145,14 @@ export function SettingsDialog({
     onSuccess: ({ input }) => {
       toast({
         title: "Settings Saved",
-        description: firstVisit
-          ? "Settings saved! Get ready to push some pixels!"
-          : "Your new settings will be applied to the next level.",
+        description: firstVisit ? (
+          "Settings saved! Get ready to push some pixels!"
+        ) : (
+          <>
+            Your new settings will be applied to the next level. To apply them
+            right now click <RefreshCcw className="size-4" />
+          </>
+        ),
       })
 
       setSavedPreset(input.preset)
@@ -153,7 +164,12 @@ export function SettingsDialog({
       if (fromCompletionDialog) {
         toast({
           title: "Settings Saved",
-          description: "Your new settings will be applied to the next level.",
+          description: (
+            <>
+              Your new settings will be applied to the next level. To apply them
+              right now click <RefreshCcw className="size-2" />
+            </>
+          ),
         })
       }
     },

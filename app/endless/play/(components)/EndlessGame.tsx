@@ -261,7 +261,7 @@ export default function SokobanGame({
             </Button>
           </TooltipTrigger>
           <TooltipContent side="right">
-            <p className="font-mono">Return</p>
+            <p className="font-mono">Return to Endless</p>
           </TooltipContent>
         </Tooltip>
         <Tooltip>

@@ -1,4 +1,4 @@
-import { Bot, Play } from "lucide-react"
+import { Bot, Play, Terminal } from "lucide-react"
 import {
   Accordion,
   AccordionContent,
@@ -8,6 +8,12 @@ import {
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { isChallengeCompleted } from "../queries"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export default async function BoxobanHeader() {
   const challengeCompleted = await isChallengeCompleted()
@@ -15,6 +21,25 @@ export default async function BoxobanHeader() {
   return (
     <div className="text-center space-y-6">
       <div className="flex items-center justify-center gap-3">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                asChild
+                variant="outline"
+                size="icon"
+                className="pixelated-border absolute top-0 left-0"
+              >
+                <Link href="/terminal">
+                  <Terminal className="h-4 w-4" />
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="font-mono">Return to terminal</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <h1 className="text-4xl font-pixel text-primary">Boxoban Challenge</h1>
       </div>
 

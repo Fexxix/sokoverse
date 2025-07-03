@@ -14,6 +14,15 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+import { Terminal } from "lucide-react"
+import Link from "next/link"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface SpikeVaultsPageProps {
   session: ValidatedSession
@@ -31,16 +40,37 @@ async function SpikeVaultsContent({ session }: SpikeVaultsPageProps) {
 
   return (
     <>
-      <Card className="mb-6 border-2 pixelated-border bg-background/80">
+      <Card className="relative mb-6 border-2 pixelated-border bg-background/80">
         <CardHeader className="pb-2">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <div>
-              <CardTitle className="text-4xl font-pixel text-primary">
-                SPIKE VAULTS
-              </CardTitle>
-              <CardDescription className="font-mono text-sm mt-1">
-                Create and explore your custom sokoban puzzle collections
-              </CardDescription>
+            <div className="flex items-center gap-4">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="icon"
+                      className="pixelated-border absolute top-0 -left-12"
+                    >
+                      <Link href="/terminal">
+                        <Terminal className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="font-mono">Return to terminal</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <div>
+                <CardTitle className="text-4xl font-pixel text-primary">
+                  SPIKE VAULTS
+                </CardTitle>
+                <CardDescription className="font-mono text-sm mt-1">
+                  Create and explore your custom sokoban puzzle collections
+                </CardDescription>
+              </div>
             </div>
             <div>{vaults.length > 0 && <CreateSpikeVaultDialog />}</div>
           </div>

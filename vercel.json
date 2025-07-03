@@ -1,7 +1,14 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/check-solution/index.rs": {
       "runtime": "vercel-rust@4.0.7"
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/cleanup-anonymous",
+      "schedule": "0 0 * * *"
+    }
+  ]
 }

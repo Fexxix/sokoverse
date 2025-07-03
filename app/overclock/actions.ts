@@ -8,6 +8,7 @@ import { and, eq, sql, desc } from "drizzle-orm"
 import { type PgColumn } from "drizzle-orm/pg-core"
 import { z } from "zod"
 import { checkOverclockAccess } from "./queries"
+import { revalidatePath } from "next/cache"
 
 export type OverclockRecordsParams = z.infer<
   typeof overclockRecordsParamsSchema
@@ -85,6 +86,15 @@ export const getOverclockRecords = authActionClient
       sortBy,
       sortOrder,
     }
+  })
+
+export const refreshRecords = authActionClient
+  .metadata({
+    actionName: "refreshRecords",
+  })
+  .action(async () => {
+    // Simply revalidate the path to refresh the data
+    revalidatePath("/overclock")
   })
 
 export const checkPaymentStatus = authActionClient

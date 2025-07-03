@@ -126,10 +126,6 @@ export default function TerminalPage() {
                       <span className="text-primary">Custom depth goals</span> -
                       set challenge targets
                     </li>
-                    <li>
-                      <span className="text-primary">Shareable vaults</span> -
-                      challenge friends
-                    </li>
                   </ul>
                 </div>
                 <div className="bg-primary/5 p-3 rounded border border-primary/20">
@@ -139,8 +135,7 @@ export default function TerminalPage() {
                   </div>
                   <div className="text-sm space-y-1">
                     <div>• Monitor completion rates across vaults</div>
-                    <div>• Compare performance with other explorers</div>
-                    <div>• Discover which seeds offer the best challenges</div>
+                    <div>• Compare performance across vaults</div>
                   </div>
                 </div>
               </div>
@@ -282,10 +277,6 @@ export default function TerminalPage() {
                     <li>
                       <span className="text-primary">Premium experience</span> -
                       exclusive access
-                    </li>
-                    <li>
-                      <span className="text-primary">Elite leaderboards</span> -
-                      compete with the best
                     </li>
                   </ul>
                 </div>

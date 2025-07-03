@@ -13,8 +13,15 @@ import EmptyState from "./(components)/EmptyState"
 import PaymentRequired from "./(components)/PaymentRequired"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { Play } from "lucide-react"
+import { Play, Terminal } from "lucide-react"
 import { type Metadata } from "next"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { RefreshButton } from "./(components)/RefreshRecords"
 
 export const metadata: Metadata = {
   title: "Sokoverse | Overclock Mode",
@@ -39,7 +46,28 @@ async function OverclockPage({ searchParams }: OverclockPageProps) {
     return (
       <div className="flex flex-col items-center">
         <div className="text-center mb-6">
-          <h1 className="text-4xl font-pixel text-primary">Overclock Mode</h1>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="icon"
+                    className="pixelated-border"
+                  >
+                    <Link href="/terminal">
+                      <Terminal className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="font-mono">Return to terminal</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <h1 className="text-4xl font-pixel text-primary">Overclock Mode</h1>
+          </div>
           <p className="font-mono text-sm text-muted-foreground mt-2">
             &gt; Premium high-intensity puzzle experience_
           </p>
@@ -69,7 +97,9 @@ async function OverclockPage({ searchParams }: OverclockPageProps) {
   return (
     <div className="flex flex-col items-center">
       <div className="text-center mb-6">
-        <h1 className="text-4xl font-pixel text-primary">Overclock Mode</h1>
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <h1 className="text-4xl font-pixel text-primary">Overclock Mode</h1>
+        </div>
         <p className="font-mono text-sm text-muted-foreground mt-2">
           &gt; Premium high-intensity puzzle experience_
         </p>
@@ -87,6 +117,21 @@ async function OverclockPage({ searchParams }: OverclockPageProps) {
           </Link>
         </Button>
       )}
+
+      <div className="mt-2 w-full flex justify-between">
+        <Button
+          asChild
+          variant="outline"
+          size="icon"
+          className="pixelated-border"
+        >
+          <Link href="/terminal">
+            <Terminal className="h-4 w-4" />
+          </Link>
+        </Button>
+
+        <div className="flex gap-2">{hasRecords && <RefreshButton />}</div>
+      </div>
 
       <div className="w-full mt-8">
         {hasRecords ? (
