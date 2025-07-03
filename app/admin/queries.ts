@@ -4,8 +4,11 @@ import { db } from "@/lib/server/db";
 import {
   boxobanLevels,
   endlessLevels,
+  overclockLevels,
+  overclockUserData,
   spikeVaultLevels,
   spikeVaults,
+  userReviews,
   userTable,
 } from "@/lib/server/db/schema";
 import { startOfToday, startOfYesterday, subDays } from "date-fns";
@@ -49,25 +52,34 @@ export type AnalyticsData = {
 // Dashboard
 export async function getUsersDataCountQuery() {
   try {
-    const [usersResult, endlessResult, vaultResult, boxobanResult] =
-      await Promise.all([
-        db.execute(sql`SELECT COUNT(*)::int AS count FROM ${userTable}`),
-        db.execute(
-          sql`SELECT COUNT(*)::int AS count FROM ${endlessLevels} WHERE is_completed = true`
-        ),
-        db.execute(
-          sql`SELECT COUNT(*)::int AS count FROM ${spikeVaultLevels} WHERE completed = true`
-        ),
-        db.execute(
-          sql`SELECT COUNT(*)::int AS count FROM ${boxobanLevels} WHERE status = 'solved'`
-        ),
-      ]);
+    const [
+      usersResult,
+      endlessResult,
+      vaultResult,
+      boxobanResult,
+      overclockResult,
+    ] = await Promise.all([
+      db.execute(sql`SELECT COUNT(*)::int AS count FROM ${userTable}`),
+      db.execute(
+        sql`SELECT COUNT(*)::int AS count FROM ${endlessLevels} WHERE is_completed = true`
+      ),
+      db.execute(
+        sql`SELECT COUNT(*)::int AS count FROM ${spikeVaultLevels} WHERE completed = true`
+      ),
+      db.execute(
+        sql`SELECT COUNT(*)::int AS count FROM ${boxobanLevels} WHERE status = 'solved'`
+      ),
+      db.execute(
+        sql`SELECT COUNT(*)::int AS count FROM ${overclockLevels} WHERE completed = true`
+      ),
+    ]);
 
     return {
       totalUsers: Number(usersResult.rows[0].count ?? 0),
       endlessPlayed: Number(endlessResult.rows[0].count ?? 0),
       vaultPlayed: Number(vaultResult.rows[0].count ?? 0),
       boxobanPlayed: Number(boxobanResult.rows[0].count ?? 0),
+      overclockPlayed: Number(overclockResult.rows[0].count ?? 0),
     };
   } catch (error) {
     console.error("Error in getUsersDataCountQuery:", error);
@@ -76,6 +88,7 @@ export async function getUsersDataCountQuery() {
       endlessPlayed: 0,
       vaultPlayed: 0,
       boxobanPlayed: 0,
+      overclockPlayed: 0,
     };
   }
 }
@@ -211,6 +224,25 @@ export async function getFilteredUsers({
         .from(boxobanLevels)
         .where(eq(boxobanLevels.assignedTo, user.id));
 
+      // Get overclock data
+      const overclockUserDataResult = await db
+        .select({
+          currentLevel: overclockUserData.currentLevel,
+        })
+        .from(overclockUserData)
+        .where(eq(overclockUserData.userId, user.id))
+        .limit(1);
+
+      const overclockCompletedLevels = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(overclockLevels)
+        .where(
+          and(
+            eq(overclockLevels.userId, user.id),
+            eq(overclockLevels.completed, true)
+          )
+        );
+
       return {
         id: user.id,
         name: user.name ?? "",
@@ -226,6 +258,10 @@ export async function getFilteredUsers({
           medium: Number(boxoban[0]?.medium ?? 0),
           hard: Number(boxoban[0]?.hard ?? 0),
           unfiltered: Number(boxoban[0]?.unfiltered ?? 0),
+        },
+        overclock: {
+          currentLevel: Number(overclockUserDataResult[0]?.currentLevel ?? 0),
+          completedLevels: Number(overclockCompletedLevels[0]?.count ?? 0),
         },
       };
     })
@@ -394,4 +430,81 @@ export async function getTimeSeriesData(date_range: string | [string, string]) {
 
   const data = await res.json();
   return data;
+}
+
+// Feedback/Reviews functions
+export type ReviewWithUser = {
+  id: number;
+  userId: number;
+  reviewText: string;
+  starRating: number;
+  approved: boolean | null;
+  createdAt: string;
+  updatedAt: string;
+  userName: string;
+  userAvatar: string;
+};
+
+export async function getApprovedReviews(): Promise<ReviewWithUser[]> {
+  try {
+    const reviews = await db
+      .select({
+        id: userReviews.id,
+        userId: userReviews.userId,
+        reviewText: userReviews.reviewText,
+        starRating: userReviews.starRating,
+        approved: userReviews.approved,
+        createdAt: userReviews.createdAt,
+        updatedAt: userReviews.updatedAt,
+        userName: userTable.name,
+        userAvatar: userTable.pictureURL,
+      })
+      .from(userReviews)
+      .innerJoin(userTable, eq(userReviews.userId, userTable.id))
+      .where(eq(userReviews.approved, true))
+      .orderBy(userReviews.createdAt);
+
+    return reviews.map((review) => ({
+      ...review,
+      createdAt: review.createdAt?.toISOString() ?? "",
+      updatedAt: review.updatedAt?.toISOString() ?? "",
+      userName: review.userName ?? "Anonymous",
+      userAvatar: review.userAvatar ?? "",
+    }));
+  } catch (error) {
+    console.error("Error fetching approved reviews:", error);
+    return [];
+  }
+}
+
+export async function getUnapprovedReviews(): Promise<ReviewWithUser[]> {
+  try {
+    const reviews = await db
+      .select({
+        id: userReviews.id,
+        userId: userReviews.userId,
+        reviewText: userReviews.reviewText,
+        starRating: userReviews.starRating,
+        approved: userReviews.approved,
+        createdAt: userReviews.createdAt,
+        updatedAt: userReviews.updatedAt,
+        userName: userTable.name,
+        userAvatar: userTable.pictureURL,
+      })
+      .from(userReviews)
+      .innerJoin(userTable, eq(userReviews.userId, userTable.id))
+      .where(eq(userReviews.approved, false))
+      .orderBy(userReviews.createdAt);
+
+    return reviews.map((review) => ({
+      ...review,
+      createdAt: review.createdAt?.toISOString() ?? "",
+      updatedAt: review.updatedAt?.toISOString() ?? "",
+      userName: review.userName ?? "Anonymous",
+      userAvatar: review.userAvatar ?? "",
+    }));
+  } catch (error) {
+    console.error("Error fetching unapproved reviews:", error);
+    return [];
+  }
 }
