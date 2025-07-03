@@ -6,14 +6,14 @@ import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import ThemeSwitcher from "@/components/ThemeSwitcher"
 import AuthDialog from "@/components/AuthDialog"
-import { Infinity, Vault, Terminal, Target, Zap } from "lucide-react"
+import { Infinity, Vault, Terminal, Target, Zap, UserCog } from "lucide-react"
 import { useAuth } from "@/contexts/auth"
 import { UserButton } from "@/components/UserButton"
 
 const Navbar = () => {
   const [showAuthDialog, setShowAuthDialog] = useState(false)
   const pathname = usePathname()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
 
   const handleAuthClick = () => {
     setShowAuthDialog(true)
@@ -70,7 +70,22 @@ const Navbar = () => {
         )}
       </div>
 
-      <div className="flex space-x-2 items-center">
+      <div className="flex gap-2 items-center">
+        {/* Admin Link - only show for specific user IDs */}
+        {user && (user.id === 1 || user.id === 20) && (
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+            className="font-pixel text-xs mr-2"
+          >
+            <Link href="/admin" className="flex items-center gap-1">
+              <UserCog className="w-3 h-3" />
+              Admin
+            </Link>
+          </Button>
+        )}
+
         {isAuthenticated ? (
           <div className="flex items-center mr-4">
             <UserButton />

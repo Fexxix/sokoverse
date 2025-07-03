@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { MoreVertical, Pencil, Share2, Trash2 } from "lucide-react"
+import { MoreVertical, Pencil, Trash2 } from "lucide-react"
 import { type SpikeVault } from "@/lib/server/db/schema"
 import EditSpikeVaultDialog from "./EditSpikeVaultDialog"
 import DeleteSpikeVaultAlertDialog from "./DeleteSpikeVaultAlertDialog"
@@ -89,10 +89,6 @@ export default function SpikeVaultDropdownMenu({
               Edit Vault
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem className="font-mono text-sm cursor-pointer">
-            <Share2 className="size-4 mr-2" />
-            Share Vault
-          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="font-mono text-sm cursor-pointer text-destructive"

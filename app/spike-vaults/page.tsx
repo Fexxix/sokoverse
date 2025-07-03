@@ -14,8 +14,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search } from "lucide-react"
-import { Input } from "@/components/ui/input"
 
 interface SpikeVaultsPageProps {
   session: ValidatedSession
@@ -65,16 +63,6 @@ async function SpikeVaultsContent({ session }: SpikeVaultsPageProps) {
                 <span className="font-bold">{completedCount}</span>
               </div>
             </div>
-            {vaults.length > 0 && (
-              <div className="relative hidden sm:block">
-                <Input
-                  type="search"
-                  placeholder="Search vaults..."
-                  className="w-[200px] font-mono text-sm pixelated-border"
-                />
-                <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>

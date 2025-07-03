@@ -21,8 +21,13 @@ const FloatingPixels: React.FC = () => {
   // Determine if we're on a game page
   const isGamePage =
     pathname === "/endless" ||
+    pathname.startsWith("/endless/") ||
     pathname === "/spike-vaults" ||
-    pathname.startsWith("/spike-vaults/")
+    pathname.startsWith("/spike-vaults/") ||
+    pathname === "/boxoban" ||
+    pathname.startsWith("/boxoban/") ||
+    pathname === "/overclock" ||
+    pathname.startsWith("/overclock/")
 
   useEffect(() => {
     // Set initial dimensions
@@ -42,7 +47,7 @@ const FloatingPixels: React.FC = () => {
           id: i,
           x: Math.random() * width,
           y: Math.random() * height,
-          size: Math.random() * 4 + 2,
+          size: Math.random() * 4 + 4,
           speed: Math.random() * 0.5 + 0.1,
           opacity: isGamePage ? 0.3 : 0.5, // Lower opacity on game pages
         })

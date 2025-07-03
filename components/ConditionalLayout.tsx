@@ -1,21 +1,21 @@
-"use client";
+"use client"
 
-import { usePathname } from "next/navigation";
-import PixelatedBackground from "@/components/PixelatedBackground";
-import FloatingPixels from "@/components/FloatingPixels";
-import Navbar from "@/components/Navbar";
-import React from "react";
+import { usePathname } from "next/navigation"
+import PixelatedBackground from "@/components/PixelatedBackground"
+import FloatingPixels from "@/components/FloatingPixels"
+import Navbar from "@/components/Navbar"
+import React from "react"
 
 export default function ConditionalLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
-  const pathname = usePathname();
-  const isAdminRoute = pathname.startsWith("/admin");
+  const pathname = usePathname()
+  const isAdminRoute = pathname.startsWith("/admin")
 
   if (isAdminRoute) {
-    return <main>{children}</main>;
+    return <main>{children}</main>
   }
 
   return (
@@ -27,5 +27,5 @@ export default function ConditionalLayout({
         <main className="py-8">{children}</main>
       </div>
     </>
-  );
+  )
 }
