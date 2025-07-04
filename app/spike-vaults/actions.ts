@@ -122,13 +122,11 @@ export const createSpikeVault = authActionClient
         }
         // if original name is not nullish its our fault (gemini created a duplicate by chance)
         else {
-          console.log({ completeVaultData })
           throw new ActionError(
             "It looks like we generated a duplicate vault name. Please try again, it shouldn't happen twice unless you are really, really, really unlucky."
           )
         }
       } else {
-        console.log("Error name", vaultInsertionResult.error.constructor.name)
         console.error(
           "Error inserting spike vault:",
           vaultInsertionResult.error

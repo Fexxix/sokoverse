@@ -9,7 +9,7 @@ export function isNeonDbError(err: unknown): err is NeonDbErrorLike {
     err !== null &&
     "constructor" in err &&
     typeof err.constructor?.name === "string" &&
-    err.constructor.name === "NeonDbError" &&
+    err.constructor.name === "DatabaseError" &&
     "code" in err &&
     typeof err.code === "string"
   )
