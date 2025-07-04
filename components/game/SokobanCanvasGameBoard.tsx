@@ -177,7 +177,7 @@ export default function SokobanCanvasGameBoard({
             cell,
             movementDirection,
             animationFrame,
-            theme as SpriteThemesKeyType
+            (theme === "system" ? "green" : theme) as SpriteThemesKeyType
           )
 
           if (sprite) {
